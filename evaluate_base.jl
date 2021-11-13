@@ -112,7 +112,7 @@ function initialize(exp_label,simu_label)
     global exp_dict = Dict{String,Array{String,1}}()
 
     if exp_label == "wt_15mM_salt"
-        global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
+        global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25)]
         global folds = [0,1,4,10,25]
     elseif exp_label == "ewt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
@@ -121,8 +121,8 @@ function initialize(exp_label,simu_label)
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
         global folds = [50]
     elseif exp_label == "wt_150mM_salt"
-        global exp_data_base=[("lwt",0),("lwt",0.1),("lwt",0.4),("lwt",1.0),("lwt",2.5)]
-        global folds = [0,4,10,25]
+        global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25)]
+        global folds = [0,1,4,10,25]
     elseif exp_label == "general" # don't use this now
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5),("lwt",0),("lwt",0.1),("lwt",0.4),("lwt",1.0),("lwt",2.5)]
         global folds = [0,4,10,25]
@@ -343,7 +343,7 @@ end
 function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
     fig=plot(size=(800,1600))
     for fold in [0,1,4,10,25]
-        conc = convert(Float64,fold/10)
+        conc = convert(Float64,fold)
         trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
     end
     for fold in [0,1,4,10,25]
@@ -405,7 +405,7 @@ function diff(k_on,k_off,v_open,v_close,folds,α,β)
         if isnan(μ_X[1])
             push!(Diffs,1.0)
         else
-            entry = exp_dict["$(convert(Float64,0.1*fold))"]
+            entry = exp_dict["$(convert(Float64,fold))"]
             T,X,D = access_trace_statistics(entry[1])
             r_X = [0.0 for i in 1:length(μ_X)]
             for i in 1:length(T)

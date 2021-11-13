@@ -16,7 +16,7 @@ end
 LL = [1000]
 for L_used in LL
     df = DataFrame(k_on = Float64[], k_off = Float64[], v_open = Float64[], v_close = Float64[])
-    simu_label = "init"
+    simu_label = "update"
     exp_label = "wt_15mM_salt"
     gaps_type = "none"
     k_ons = [10.0^(-k) for k in 1:1:5]

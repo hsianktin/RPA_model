@@ -13,7 +13,7 @@ elseif length(ARGS) == 2
     println("simu_label=$simu_label")
 else
     exp_label = "wt_15mM_salt"
-    simu_label = "length_1000"
+    simu_label = "init"
 end
 
 if exp_label== "general" # self-citing
@@ -26,6 +26,7 @@ else
         local k_on,k_off,v_open,v_close = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,folds)
         # @printf("analyzing progress: %.2f\r",i/length_of_paras)
+        
     end
     # diff contains all the information needed
     if length(unique(df.k_on)) > 1
@@ -47,7 +48,7 @@ else
     println("minval = $minval")
     k_on,k_off,v_open,v_close,α,β,d=df[index_min,:]
     println(@sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β))
-
+    # k_on,k_off,v_open,v_close,α,β= 1e-5,1e-4,1e-2,1e-3,1,2
     ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
     yaxis!(:flip)
     ylims!(-2.0,2.0)
