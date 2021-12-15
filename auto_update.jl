@@ -13,7 +13,7 @@ function simu_fname(exp_label,simu_label,count)
 end
 
 
-L = 1000
+L = 5000
 
 simupath = "$(pwd())/data_simu"
 # initialize
@@ -40,7 +40,7 @@ push!(para_df,p₀)
 push!(P,p₀)
 function simu_paras(p₀) # update the simulation parameters
     k_on,k_off,v_open,v_close = p₀
-    lower_limit = 1e-6
+    lower_limit = 1.0e-6
     upper_limit = 1e1
     function modulate(v) # fall between limits
         if v < lower_limit
@@ -51,14 +51,14 @@ function simu_paras(p₀) # update the simulation parameters
             return v
         end
     end
-    global k_ons = unique([modulate(k_on*(10.0^i)) for i in -1:1:1])
-    global k_offs = unique([modulate(k_off*(10.0^i)) for i in -1:1:1])
-    global v_opens = unique([modulate(v_open*(10.0^i)) for i in -1:1:1])
-    global v_closes = unique([modulate(v_close*(10.0^i)) for i in -1:1:1])
+    global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
+    global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
+    global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
+    global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
 end
 print("parameters initialized.\n")
 # iteration
-while it < 5
+while it < 15
     if it > 0
         pₙ = []
         for para in paras_names
@@ -78,7 +78,7 @@ while it < 5
     end
     global it += 1
     simu_paras(pₙ)
-    folds = [0,1,4,10,25]
+    folds = [0,1,4,10,25,50]
     Ls = [L]
     T1 = 1800.0
     T2 = 600.0
@@ -164,7 +164,7 @@ while it < 5
 end
 
 ## final stage
-it = 5
+it = 15
 while !isfile("$figpath/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
     global it -=1
 end
@@ -183,7 +183,7 @@ function final_paras(p₀) # update the simulation parameters
 end
 final_paras(p₁)
 simu_label="fitted"
-folds = [0,1,4,10,25]
+folds = [0,1,4,10,25,50]
 Ls = [L]
 T1 = 1800.0
 T2 = 600.0
@@ -202,7 +202,7 @@ count = 0
                         # push!(df,(k_on,k_off,v_open,v_close))
                         for L in Ls
                             for fold in folds
-                                count += 1
+                                global count += 1
                                 if !isfile(simu_fname(exp_label,simu_label,count))
                                     cmd=`julia simu_base.jl $k_on $k_off $v_open $v_close $fold $L $T1 $T2 $N $(exp_label) $(simu_label)_$count $gaps_type`
                                     push!(cmds,cmd)

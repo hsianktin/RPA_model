@@ -12,8 +12,8 @@ elseif length(ARGS) == 2
     simu_label=ARGS[2]
     println("simu_label=$simu_label")
 else
-    exp_label = "wt_15mM_salt"
-    simu_label = "init"
+    exp_label = "wt_150mM_salt"
+    simu_label = "update_1"
 end
 
 if exp_label== "general" # self-citing
@@ -26,7 +26,6 @@ else
         local k_on,k_off,v_open,v_close = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,folds)
         # @printf("analyzing progress: %.2f\r",i/length_of_paras)
-        
     end
     # diff contains all the information needed
     if length(unique(df.k_on)) > 1

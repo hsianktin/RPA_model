@@ -96,7 +96,7 @@ function index(k_ons,k_offs,v_opens,v_closes,data_folds,folds)
             end
         end
     end
-    print(length(index_p.k_on))
+    # print(length(index_p.k_on))
     return index_p
 end
 function initialize(exp_label,simu_label)
@@ -112,17 +112,17 @@ function initialize(exp_label,simu_label)
     global exp_dict = Dict{String,Array{String,1}}()
 
     if exp_label == "wt_15mM_salt"
-        global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25)]
-        global folds = [0,1,4,10,25]
+        global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25),("wt",50)]
+        global folds = [0,1,4,10,25,50]
     elseif exp_label == "ewt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
-        global folds = [0,1,4,10,25]
+        global folds = [0,1,4,10,25,50]
     elseif exp_label == "vitro"
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
         global folds = [50]
     elseif exp_label == "wt_150mM_salt"
-        global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25)]
-        global folds = [0,1,4,10,25]
+        global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25),("lwt",50)]
+        global folds = [0,1,4,10,25,50]
     elseif exp_label == "general" # don't use this now
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5),("lwt",0),("lwt",0.1),("lwt",0.4),("lwt",1.0),("lwt",2.5)]
         global folds = [0,4,10,25]
@@ -267,7 +267,7 @@ function access_trace_statistics(datapath::String) # access experiment data
     X=Array{Float64,1}[]
     T=Array{Float64,1}[]
     for fname in readdir(datapath)
-        if length(fname) == 12
+        # if length(fname) == 12 
             f = open("$datapath/$fname", "r")
             length_file = countlines(f)
             seekstart(f)
@@ -276,7 +276,7 @@ function access_trace_statistics(datapath::String) # access experiment data
             push!(X,X_temp[1:481])
             push!(T,T_temp[1:481])
             close(f)
-        end
+        # end
     end
     ## We should notice that different trace represents DNA of different lengths.
     # X_norm = mean([mean(x[355,358]) for x in X])
@@ -342,11 +342,27 @@ end
 
 function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
     fig=plot(size=(800,1600))
-    for fold in [0,1,4,10,25]
+    for fold in folds
         conc = convert(Float64,fold)
         trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
     end
-    for fold in [0,1,4,10,25]
+    for fold in folds
+        t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
+        t_X=[i for i in 1:length(μ_X)]
+        temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
+        CSV.write("./figs/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
+        label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β)
+        plot!(t_X,μ_X,line=:dash,lw=5,label = label)
+    end
+end
+
+function ensemble_plot(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
+    fig=plot(size=(800,1600))
+    for fold in exp_folds
+        conc = convert(Float64,fold)
+        trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
+    end
+    for fold in simu_folds
         t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
         t_X=[i for i in 1:length(μ_X)]
         temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
@@ -358,7 +374,7 @@ end
 
 function microstates_plot(k_on,k_off,v_open,v_close,folds)
     plot_array = Any[] # can type this more strictly
-    for fold in [0,1,4,10,25]
+    for fold in folds
         t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
         label = @sprintf("fold = %.1f",fold)
         temp_df = DataFrame(time=t_X,ABCD=μ_1,ABC=μ_2,sd_ABCD=σ_1,sd_ABC=σ_2)
@@ -367,10 +383,29 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds)
         # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
         push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",legend=false)) # make a plot and add it to the plot_array
     end
-    if length([0,1,4,10,25])==5
+    if length(folds)==5
     plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
-    elseif length(folds)==4
-        plot(plot_array...,layout=@layout([a;b;c;d]),size=(800,800))
+    elseif length(folds)==6
+        plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
+    end
+    savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
+end
+
+function microstates_plot(k_on,k_off,v_open,v_close,folds,exp_label,simu_label)
+    plot_array = Any[] # can type this more strictly
+    for fold in folds
+        t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
+        label = @sprintf("fold = %.1f",fold)
+        temp_df = DataFrame(time=t_X,ABCD=μ_1,ABC=μ_2,sd_ABCD=σ_1,sd_ABC=σ_2)
+        CSV.write("./figs/microstates_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
+        # fig = plot()
+        # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
+        push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",legend=false)) # make a plot and add it to the plot_array
+    end
+    if length(folds)==5
+    plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
+    elseif length(folds)==6
+        plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
     end
     savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end

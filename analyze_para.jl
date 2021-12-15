@@ -1,0 +1,1 @@
+# based on existing parameters, obtain the relation between folds and covered DNA

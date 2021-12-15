@@ -362,12 +362,12 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds)
         # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
         push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",legend=false)) # make a plot and add it to the plot_array
     end
-    if length([0,1,4,10,25])==5
-    plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
-    elseif length(folds)==4
-        plot(plot_array...,layout=@layout([a;b;c;d]),size=(800,800))
-    end
-    savefig("./figs/microstates_$(exp_label).png")
+    if length(folds)==5
+        plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
+        elseif length(folds)==6
+            plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
+        end
+    savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end
 
 function diff(EX,μ_X,type="squared errors")
