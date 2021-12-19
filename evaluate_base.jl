@@ -2,6 +2,7 @@ using Statistics
 using CSV
 using Plots
 using DataFrames
+using FFTW
 using DelimitedFiles
 using Printf
 simupath = "$(pwd())/data_simu"
@@ -113,7 +114,7 @@ function initialize(exp_label,simu_label)
 
     if exp_label == "wt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25),("wt",50)]
-        global folds = [0,1,4,10,25,50]
+        global folds = [0,1,4,10,25]
     elseif exp_label == "ewt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
         global folds = [0,1,4,10,25,50]
@@ -122,7 +123,7 @@ function initialize(exp_label,simu_label)
         global folds = [50]
     elseif exp_label == "wt_150mM_salt"
         global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25),("lwt",50)]
-        global folds = [0,1,4,10,25,50]
+        global folds = [0,1,4,10,25]
     elseif exp_label == "general" # don't use this now
         global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5),("lwt",0),("lwt",0.1),("lwt",0.4),("lwt",1.0),("lwt",2.5)]
         global folds = [0,4,10,25]
@@ -410,7 +411,39 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds,exp_label,simu_label)
     savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end
 
-function diff(EX,μ_X,type="squared errors")
+function access_occupancy(k_on,k_off,v_open,v_close,fold)
+    t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
+    μ = μ_1[end]+μ_2[end]
+    σ = √(σ_1[end]^2+σ_2[end]^2)
+    return μ,σ
+end
+
+function occupancy_plot(k_on,k_off,v_open,v_close,simu_folds,exp_label,simu_label)
+    μₒ = Array{Float64,1}()
+    σₒ = Array{Float64,1}()
+    for fold in simu_folds
+        μ_X,σ_X = access_occupancy(k_on,k_off,v_open,v_close,fold)
+        push!(μₒ,μ_X)
+        push!(σₒ,σ_X)
+    end
+    plot(simu_folds,μₒ,ribbon=σₒ,fillalpha=.2,line=:dash,lw=5,label = "$(exp_label)")
+    savefig("./figs/occupancy_$(exp_label)_$(simu_label).png")
+end
+
+
+function Gaussian_derivative(X)
+    ℓ = length(X)
+    σ = 20
+    ∂G(x) = 100/√(2π*σ^2) * exp(- x^2/(2σ^2)) * (-x/(σ^2))
+    X∂G = zeros(ℓ)
+    for i in 1:ℓ
+        X∂G[i] = sum([X[minimum([maximum([j,1]),ℓ])]*∂G(i-j) for j in i-20:1:i+20])
+    end
+    return X∂G
+end
+
+
+function diff(EX,μ_X,type="derivatives")
     if type == "squared errors"
         difference = 0.0
         for j in 1200:2400
@@ -421,6 +454,18 @@ function diff(EX,μ_X,type="squared errors")
             end
         end
         return difference
+    elseif type == "derivatives"
+        derivative = 0.0
+        for j in 1800:2400
+            if (j  < 2000.0)
+                derivative += 1*(EX[j]-μ_X[j])^2
+            else
+                derivative += 1*(EX[j]-μ_X[j])^2
+            end
+        end
+        EX′ = Gaussian_derivative(EX[1800:2400])
+        μ_X′ = Gaussian_derivative(μ_X[1800:2400])        
+        return derivative + sum((EX′.-μ_X′).^2)*2
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))
         return difference
@@ -442,11 +487,11 @@ function diff(k_on,k_off,v_open,v_close,folds,α,β)
         else
             entry = exp_dict["$(convert(Float64,fold))"]
             T,X,D = access_trace_statistics(entry[1])
-            r_X = [0.0 for i in 1:length(μ_X)]
+            EX = [0.0 for i in 1:length(μ_X)]
             for i in 1:length(T)
-                r_X[maximum([ceil(Int,T[i]),1]):end].=X[i]
+                EX[maximum([ceil(Int,T[i]),1]):end].=X[i]
             end
-            push!(Diffs,Weight[i]*diff(r_X,μ_X))
+            push!(Diffs,Weight[i]*diff(EX,μ_X,"derivatives"))
         end
     end
     return Diffs

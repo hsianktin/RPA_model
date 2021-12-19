@@ -22,18 +22,22 @@ if length(ARGS) == 1
 else
     exp_label="wt_150mM_salt"
 end
+para_df = CSV.read("figs/para.csv",DataFrame)
+
 init_label="init"
 simu_label = "update"
 gaps_type = "none"
 it = 0
 paras_names = ["k_on","k_off","v_open","v_close"]
 figpath = "./figs"
-p₀ = []
-for para in paras_names
-    @show landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
-    p,i=findmin(landscape.error)
-    push!(p₀,landscape.para[i])
-end
+requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for i in 1:length(para_df.L)],:]
+k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
+p₀=[k_on,k_off,k_open,k_close]
+# for para in paras_names
+#     @show landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
+#     p,i=findmin(landscape.error)
+#     push!(p₀,landscape.para[i])
+# end
 P = []
 para_df = DataFrame(k_on=Float64[],k_off=Float64[],v_open=Float64[],v_close=Float64[])
 push!(para_df,p₀)
@@ -78,7 +82,7 @@ while it < 15
     end
     global it += 1
     simu_paras(pₙ)
-    folds = [0,1,4,10,25,50]
+    folds = [0,1,4,10,25]
     Ls = [L]
     T1 = 1800.0
     T2 = 600.0
