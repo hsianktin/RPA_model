@@ -23,7 +23,7 @@ if length(ARGS) == 1
 else
     exp_label="wt_15mM_salt"
 end
-para_df = CSV.read("figs/para_update.csv",DataFrame)
+para_df = CSV.read("figs/sources/para_update.csv",DataFrame)
 
 init_label="init"
 simu_label = "update"

@@ -2,11 +2,11 @@ print("initializing...\r")
 using DataFrames
 using ProgressMeter
 using CSV
-para_df = CSV.read("figs/para_update.csv",DataFrame)
+para_df = CSV.read("figs/sources/para_update.csv",DataFrame)
 # push!(para_df,[1e-5,1e-3, 1e-4,1e-3,2,3.2,1000,"wt_15mM_salt"])
 # push!(para_df,[1e-5,1e-2, 1e-4,1e-2,2,3.2,1000,"wt_150mM_salt"])
 
-CSV.write("figs/para.csv",para_df)
+CSV.write("figs/sources/para.csv",para_df)
 N = 200
 T1 = 1800.0
 T2 = 600.0

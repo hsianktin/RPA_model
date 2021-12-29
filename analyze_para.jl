@@ -8,7 +8,7 @@ addprocs(12)
     using ProgressMeter
 end
 
-para_df = CSV.read("figs/para_update.csv",DataFrame)
+para_df = CSV.read("figs/sources/para_update.csv",DataFrame)
 # below is the old parameter obtained with L = 1000
 ## push!(para_df,[1e-5,1e-3, 1e-4,1e-3,2,3.2,1000,"wt_15mM_salt"])
 ## push!(para_df,[1e-5,1e-2, 1e-4,1e-2,2,3.2,1000,"wt_150mM_salt"])
