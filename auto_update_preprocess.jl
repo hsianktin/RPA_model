@@ -12,6 +12,7 @@ function simu_fname(exp_label,simu_label,count)
     return "$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$count.csv"
 end
 
+N_it = 10
 
 L = 5000
 
@@ -22,7 +23,7 @@ if length(ARGS) == 1
 else
     exp_label="wt_15mM_salt"
 end
-para_df = CSV.read("figs/para.csv",DataFrame)
+para_df = CSV.read("figs/para_update.csv",DataFrame)
 
 init_label="init"
 simu_label = "update"
@@ -55,14 +56,14 @@ function simu_paras(p₀) # update the simulation parameters
             return v
         end
     end
-    global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
-    global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
-    global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
-    global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
+    global k_ons = unique([modulate(k_on*(10.0^(i/4))) for i in -1:1:1])
+    global k_offs = unique([modulate(k_off*(10.0^(i/4))) for i in -1:1:1])
+    global v_opens = unique([modulate(v_open*(10.0^(i/4))) for i in -1:1:1])
+    global v_closes = unique([modulate(v_close*(10.0^(i/4))) for i in -1:1:1])
 end
 print("parameters initialized.\n")
 # iteration
-while it < 15
+while it < N_it
     if it > 0
         pₙ = []
         for para in paras_names
@@ -115,6 +116,10 @@ while it < 15
     # println("command length: $(length(cmds))")
     # use distributed storage for parallel execution.
     @showprogress 1 "running for iteration $(it) " pmap(run,cmds)
+    try # clear old data
+        rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it).csv")
+    catch
+    end
     for i in 1:count
         try
         open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$i.csv","r") do input
@@ -169,7 +174,7 @@ while it < 15
 end
 
 ## final stage
-it = 15
+it = N_it
 while !isfile("$figpath/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
     global it -=1
 end
@@ -192,10 +197,15 @@ folds = [0,1,4,10,25,50]
 Ls = [L]
 T1 = 1800.0
 T2 = 600.0
-N = 10
-gaps_type = "exact"
+N = 100
+gaps_type = "none"
 cmds = Array{Cmd,1}()
 count = 0
+try
+    rm("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv")
+    rm("$simupath/rsa_exact_gaps_$(exp_label)_$(simu_label).csv") 
+catch
+end
     while count < 10*length(folds)
         for k_on in k_ons
             for k_off in k_offs
@@ -246,29 +256,29 @@ count = 0
         catch
         end
     end
-    for i in 1:count
-        try
-            open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
-                open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
-                    n = countlines(input)
-                    record = 0
-                    seekstart(input)
-                    for k in 1:n
-                        line = readline(input)
-                        println(output,line)
-                        record = record + 1
-                    end
-                    # println(record)
-                end
-            end
-        catch
-        end
-    end
-    for i in 1:count
-        try
-            rm("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv")
-        catch
-        end
-    end
+    # for i in 1:count
+    #     try
+    #         open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
+    #             open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
+    #                 n = countlines(input)
+    #                 record = 0
+    #                 seekstart(input)
+    #                 for k in 1:n
+    #                     line = readline(input)
+    #                     println(output,line)
+    #                     record = record + 1
+    #                 end
+    #                 # println(record)
+    #             end
+    #         end
+    #     catch
+    #     end
+    # end
+    # for i in 1:count
+    #     try
+    #         rm("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv")
+    #     catch
+    #     end
+    # end
     run(`julia evaluate_1.jl $exp_label $(simu_label)`)
-    run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
+    # run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)

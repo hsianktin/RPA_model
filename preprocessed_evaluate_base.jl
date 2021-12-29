@@ -8,6 +8,7 @@ using DataFrames
 using FFTW
 using DelimitedFiles
 using Printf
+norm_debug = true
 simupath = "$(pwd())/data_simu"
 mainpath = pwd()
 exppath = "$mainpath/data_exp"
@@ -66,13 +67,13 @@ function access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
     test_df = CSV.read("./data/simu_$(exp_label)_$(simu_label)_$(k_on)_$(k_off)_$(v_open)_$(v_close).csv",DataFrame)
     simu_df = DataFrame(folds=Int[],T=Array{Float64,1}[],μ_1 = Array{Float64,1}[],σ_1 = Array{Float64,1}[], μ_2 = Array{Float64,1}[],σ_2 = Array{Float64,1}[])
     for i in 1:length(test_df.folds)
-        fold = test_df.folds[i]
-        T = [parse(Float64,x) for x in split(test_df.T[1][2:end-1],",")]
-        μ_1 = [parse(Float64,x) for x in split(test_df.μ_1[1][2:end-1],",")] 
-        σ_1 = [parse(Float64,x) for x in split(test_df.σ_1[1][2:end-1],",")]
-        μ_2 = [parse(Float64,x) for x in split(test_df.μ_2[1][2:end-1],",")]
-        σ_2 = [parse(Float64,x) for x in split(test_df.σ_2[1][2:end-1],",")]
-        push!(simu_df, [fold, T, μ_1, σ_1, μ_2, σ_2])   
+        fold′ = test_df.folds[i]
+        T = [parse(Float64,x) for x in split(test_df.T[i][2:end-1],",")]
+        μ_1 = [parse(Float64,x) for x in split(test_df.μ_1[i][2:end-1],",")] 
+        σ_1 = [parse(Float64,x) for x in split(test_df.σ_1[i][2:end-1],",")]
+        μ_2 = [parse(Float64,x) for x in split(test_df.μ_2[i][2:end-1],",")]
+        σ_2 = [parse(Float64,x) for x in split(test_df.σ_2[i][2:end-1],",")]
+        push!(simu_df, [fold′, T, μ_1, σ_1, μ_2, σ_2])   
     end
     j = findfirst(x-> x== fold, simu_df.folds)
     T = simu_df.T[j]
@@ -119,7 +120,7 @@ function diff(EX,μ_X,type="derivatives")
         return difference
     elseif type == "derivatives"
         derivative = 0.0
-        for j in 1800:2400
+        for j in 1200:2400
             if (j  < 2000.0)
                 derivative += 1*(EX[j]-μ_X[j])^2
             else
@@ -128,7 +129,10 @@ function diff(EX,μ_X,type="derivatives")
         end
         EX′ = Gaussian_derivative(EX[1800:2400])
         μ_X′ = Gaussian_derivative(μ_X[1800:2400])        
-        return derivative + sum((EX′.-μ_X′).^2)*2
+        if norm_debug == true
+            println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
+        end
+        return derivative + sum((EX′.-μ_X′).^2)*5
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))
         return difference
@@ -142,6 +146,9 @@ function diff(k_on,k_off,v_open,v_close,folds,α,β)
     Weight = [1,1,1,1,1,1,1]
     for i in 1:length(folds)
         fold = folds[i]
+        if norm_debug== true
+            println("fold=$fold")
+        end
         paras = [k_on,k_off,v_open,v_close,fold,α,β]
         paras = [convert(Float64,x) for x in paras]
         t_X,μ_X,σ_X = access_trace_statistics(paras)
@@ -188,6 +195,69 @@ function analyze(df,para)
         end
     end
     temp_df = DataFrame(para=X, error=Y)
-    CSV.write("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
-    savefig("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).svg")
+    CSV.write("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
+    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).svg")
+end
+
+
+function trace_plot!(exp_label,fold)
+    time_course, μ_X, σ_X = access_trace_statistics(exp_label,fold)
+    plot!(time_course,μ_X,ribbon=σ_X,fillalpha=.1,lw=5) 
+end
+
+function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
+    fig=plot(size=(800,600),legend=false)
+    for fold in folds
+        conc = convert(Float64,fold)
+        trace_plot!(exp_label,fold)
+    end
+    for fold in folds
+        t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
+        t_X=[i for i in 1:length(μ_X)]
+        temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
+        CSV.write("./figs/sources/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
+        label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β)
+        plot!(t_X,μ_X,line=:dash,lw=5,label = label)
+    end
+end
+
+function access_microstates(k_on,k_off,v_open,v_close,fold)
+    test_df = CSV.read("./data/simu_$(exp_label)_$(simu_label)_$(k_on)_$(k_off)_$(v_open)_$(v_close).csv",DataFrame)
+    simu_df = DataFrame(folds=Int[],T=Array{Float64,1}[],μ_1 = Array{Float64,1}[],σ_1 = Array{Float64,1}[], μ_2 = Array{Float64,1}[],σ_2 = Array{Float64,1}[])
+    for i in 1:length(test_df.folds)
+        T = [parse(Float64,x) for x in split(test_df.T[1][2:end-1],",")]
+        μ_1 = [parse(Float64,x) for x in split(test_df.μ_1[1][2:end-1],",")] 
+        σ_1 = [parse(Float64,x) for x in split(test_df.σ_1[1][2:end-1],",")]
+        μ_2 = [parse(Float64,x) for x in split(test_df.μ_2[1][2:end-1],",")]
+        σ_2 = [parse(Float64,x) for x in split(test_df.σ_2[1][2:end-1],",")]
+        push!(simu_df, [fold, T, μ_1, σ_1, μ_2, σ_2])   
+    end
+    j = findfirst(x-> x== fold, simu_df.folds)
+    T = simu_df.T[j]
+    μ_1 = simu_df.μ_1[j]
+    σ_1 = simu_df.σ_1[j]
+    μ_2 = simu_df.μ_2[j]
+    σ_2 = simu_df.σ_2[j]
+    return T,μ_1,μ_2,σ_1,σ_2 
+end
+
+function microstates_plot(k_on,k_off,v_open,v_close,folds)
+    plot_array = Any[] # can type this more strictly
+    for fold in folds
+        t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
+        label = @sprintf("fold = %.1f",fold)
+        temp_df = DataFrame(time=t_X,ABCD=μ_1,ABC=μ_2,sd_ABCD=σ_1,sd_ABC=σ_2)
+        CSV.write("./figs/microstates_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
+        # fig = plot()
+        # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
+        push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,label=["30nt" "20nt"])) # make a plot and add it to the plot_array
+    end
+    if length(folds)==5
+    plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
+    elseif length(folds)==6
+        plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(960,800))
+    elseif length(folds)==7
+        plot(plot_array...,layout=@layout([a;b;c;d;e;f;g]),size=(1120,800))
+    end
+    savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end
