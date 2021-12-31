@@ -437,7 +437,7 @@ function analyze(df,para)
             xaxis!(:log)
         end
     end
-    savefig("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).svg")
+    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).svg")
 end
 
 

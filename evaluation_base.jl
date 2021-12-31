@@ -439,8 +439,8 @@ function analyze(df,para)
         end
     end
     temp_df = DataFrame(para=X, error=Y)
-    CSV.write("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
-    savefig("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).svg")
+    CSV.write("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
+    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).svg")
 end
 
 

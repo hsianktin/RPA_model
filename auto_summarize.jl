@@ -21,7 +21,7 @@ gaps_type = "none"
 
 for exp_label in exp_labels
     it = 15
-    while !isfile("$figpath/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
+    while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
         it -= 1
     end
     # summarize all update data
@@ -57,7 +57,7 @@ end
 for exp_label in exp_labels
     p₀ = []
     for para in paras_names
-        @show landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(simu_label).csv",DataFrame)
+        @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).csv",DataFrame)
         p,i=findmin(landscape.error)
         push!(p₀,landscape.para[i])
     end

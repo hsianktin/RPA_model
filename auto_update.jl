@@ -34,7 +34,7 @@ requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for
 k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
 p₀=[k_on,k_off,k_open,k_close]
 # for para in paras_names
-#     @show landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
+#     @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
 #     p,i=findmin(landscape.error)
 #     push!(p₀,landscape.para[i])
 # end
@@ -66,7 +66,7 @@ while it < 15
     if it > 0
         pₙ = []
         for para in paras_names
-            landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+            landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
             p,i=findmin(landscape.error)
             push!(pₙ,landscape.para[i])
         end
@@ -169,12 +169,12 @@ end
 
 ## final stage
 it = 15
-while !isfile("$figpath/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
+while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
     global it -=1
 end
 p₁ = []
 for para in paras_names
-    @show landscape=CSV.read("$figpath/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+    @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
     p,i=findmin(landscape.error)
     push!(p₁,landscape.para[i])
 end
