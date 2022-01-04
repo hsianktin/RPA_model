@@ -20,7 +20,7 @@ simupath = "$(pwd())/data_simu"
 if length(ARGS) == 1
     exp_label = ARGS[1]
 else
-    exp_label="wt_150mM_salt"
+    exp_label="wt_15mM_salt"
 end
 para_df = CSV.read("figs/sources/para.csv",DataFrame)
 
@@ -66,7 +66,7 @@ while it < 15
     if it > 0
         pₙ = []
         for para in paras_names
-            landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+            landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
             p,i=findmin(landscape.error)
             push!(pₙ,landscape.para[i])
         end
@@ -115,6 +115,12 @@ while it < 15
     # println("command length: $(length(cmds))")
     # use distributed storage for parallel execution.
     @showprogress 1 "running for iteration $(it) " pmap(run,cmds)
+    try # clear old data
+        rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it).csv")
+        println("old data deleted")
+    catch
+        println("no old data detected")
+    end
     for i in 1:count
         try
         open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$i.csv","r") do input
@@ -168,10 +174,10 @@ while it < 15
 end
 
 ## final stage
-it = 15
-while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
-    global it -=1
-end
+# it = 15
+# while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
+#     global it -=1
+# end
 p₁ = []
 for para in paras_names
     @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)

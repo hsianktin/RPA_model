@@ -456,16 +456,19 @@ function diff(EX,μ_X,type="derivatives")
         return difference
     elseif type == "derivatives"
         derivative = 0.0
-        for j in 1800:2400
+        for j in 1200:2400
             if (j  < 2000.0)
                 derivative += 1*(EX[j]-μ_X[j])^2
             else
-                derivative += 1*(EX[j]-μ_X[j])^2
+                derivative += 2*(EX[j]-μ_X[j])^2
             end
         end
         EX′ = Gaussian_derivative(EX[1800:2400])
         μ_X′ = Gaussian_derivative(μ_X[1800:2400])        
-        return derivative + sum((EX′.-μ_X′).^2)*2
+        if norm_debug == true
+            println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
+        end
+        return derivative + sum((EX′.-μ_X′).^2)*0
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))
         return difference

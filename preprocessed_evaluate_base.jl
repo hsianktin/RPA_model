@@ -124,7 +124,7 @@ function diff(EX,μ_X,type="derivatives")
             if (j  < 2000.0)
                 derivative += 1*(EX[j]-μ_X[j])^2
             else
-                derivative += 1*(EX[j]-μ_X[j])^2
+                derivative += 2*(EX[j]-μ_X[j])^2
             end
         end
         EX′ = Gaussian_derivative(EX[1800:2400])
@@ -132,7 +132,7 @@ function diff(EX,μ_X,type="derivatives")
         if norm_debug == true
             println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
         end
-        return derivative + sum((EX′.-μ_X′).^2)*5
+        return derivative + sum((EX′.-μ_X′).^2)*0
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))
         return difference
@@ -206,7 +206,7 @@ function trace_plot!(exp_label,fold)
 end
 
 function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
-    fig=plot(size=(800,600),legend=false)
+    fig=plot(size=(800,600))
     for fold in folds
         conc = convert(Float64,fold)
         trace_plot!(exp_label,fold)

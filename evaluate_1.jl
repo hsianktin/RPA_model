@@ -22,6 +22,7 @@ if exp_label== "general" # self-citing
 else
     initialize(exp_label,simu_label)
     length_of_paras = length(index_p.k_on)
+    norm_debug = false
     @showprogress 1 "analyzing $exp_label..." for i in 1:length_of_paras
         local k_on,k_off,v_open,v_close = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,folds)
@@ -46,6 +47,11 @@ else
     minval,index_min = findmin(df.diff)
     println("minval = $minval")
     k_on,k_off,v_open,v_close,α,β,d=df[index_min,:]
+    norm_debug = true
+    try
+    diff(k_on,k_off,v_open,v_close,folds,α,β)
+    catch
+    end
     println(@sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β))
     # k_on,k_off,v_open,v_close,α,β= 1e-5,1e-4,1e-2,1e-3,1,2
     ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)

@@ -12,7 +12,7 @@ function simu_fname(exp_label,simu_label,count)
     return "$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$count.csv"
 end
 
-N_it = 10
+N_it = 15
 
 L = 5000
 
@@ -35,7 +35,7 @@ requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for
 k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
 p₀=[k_on,k_off,k_open,k_close]
 # for para in paras_names
-#     @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
+#     @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
 #     p,i=findmin(landscape.error)
 #     push!(p₀,landscape.para[i])
 # end
@@ -56,10 +56,10 @@ function simu_paras(p₀) # update the simulation parameters
             return v
         end
     end
-    global k_ons = unique([modulate(k_on*(10.0^(i/4))) for i in -1:1:1])
-    global k_offs = unique([modulate(k_off*(10.0^(i/4))) for i in -1:1:1])
-    global v_opens = unique([modulate(v_open*(10.0^(i/4))) for i in -1:1:1])
-    global v_closes = unique([modulate(v_close*(10.0^(i/4))) for i in -1:1:1])
+    global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
+    global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
+    global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
+    global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
 end
 print("parameters initialized.\n")
 # iteration
@@ -175,12 +175,12 @@ end
 
 ## final stage
 it = N_it
-while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
+while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
     global it -=1
 end
 p₁ = []
 for para in paras_names
-    @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+    @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
     p,i=findmin(landscape.error)
     push!(p₁,landscape.para[i])
 end

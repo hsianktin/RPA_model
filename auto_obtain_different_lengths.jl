@@ -49,7 +49,7 @@ print("parameters initialized.\n")
 
 ## final stage
 simu_label = "update"
-if !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv") && it >= 0
+if !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv") && it >= 0
     print("no fitting results found.\n Please run auto_summarize.jl\n")
     exit()
 end
@@ -59,7 +59,7 @@ p₁ = []
 para_df = CSV.read("$figpath/para_$(simu_label).csv",DataFrame)
 id = findfirst(para_df["exp_label"] == exp_label)
 for para in paras_names
-    @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+    @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
     p,i=findmin(landscape.error)
     push!(p₁,landscape.para[i])
 end
