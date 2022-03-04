@@ -73,6 +73,7 @@ T₁ = 2400
 using StatsPlots
 
 @df df[df.time .== 2401,:] groupedhist(:size, group = :fold, bar_position = :dodge)
+title!("Count=$(maximum(df.id)/length(unique(df.fold)))")
 xlims!(0,40)
 using CSV
 CSV.write("./figs/exact_gaps_table_$(exp_label)_$(simu_label).csv",df[findall(x->x∈[30*60+1,31*60+1,32*60+1,40*60+1],df.time),:])

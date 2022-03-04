@@ -62,12 +62,16 @@ if exp_label == "wt_15mM_salt_with_diffusion"
 elseif exp_label == "wt_150mM_salt_with_diffusion"
     D1 = 3.96
     D2 = 4.58
+elseif length(Paras) == 13
+    D1 = D2 = parse(Float64,Paras[13])
 else
     D1 = D2 = 0.0
 end
 
+
+
 if gaps_type == "none"
-    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,N]
+    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,state_1,state_2,state)
         Simulate(v_open,v_close,0.0,0.0,k_on,k_off,D1,D2,L,l1,l2,T1,Time,Length,state_1,state_2,state) # we assume that the state of binding length 20 is an absolute intermediate state. If ABCD(l=30) wants to detach, or bind, it must go through ABC(l=20) state first. D1 and D2 are assumed similarly.
@@ -119,7 +123,7 @@ if gaps_type == "none"
     end
     run_flow(T1,T2,N)
 elseif gaps_type == "cumulative"
-    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,N]
+    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
         Simulate(v_open,v_close,0.0,0.0,k_on,k_off,D1,D2,L,l1,l2,T1,Time,Length,Gaps,state_1,state_2,state,gaps_type) # we assume that the state of binding length 20 is an absolute intermediate state. If ABCD(l=30) wants to detach, or bind, it must go through ABC(l=20) state first. D1 and D2 are assumed similarly.
@@ -176,7 +180,7 @@ elseif gaps_type == "cumulative"
     end
     run_flow(T1,T2,N)
 else
-    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,N]
+    paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
         Simulate(v_open,v_close,0.0,0.0,k_on,k_off,D1,D2,L,l1,l2,T1,Time,Length,Gaps,state_1,state_2,state,gaps_type) # we assume that the state of binding length 20 is an absolute intermediate state. If ABCD(l=30) wants to detach, or bind, it must go through ABC(l=20) state first. D1 and D2 are assumed similarly.

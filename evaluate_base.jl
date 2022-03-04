@@ -443,7 +443,7 @@ function Gaussian_derivative(X)
 end
 
 
-function diff(EX,μ_X,type="derivatives")
+function diff(EX,μ_X,type="squared errors")
     if type == "squared errors"
         difference = 0.0
         for j in 1200:2400
@@ -502,7 +502,7 @@ end
 function evaluate(df,k_on,k_off,v_open,v_close,folds)
 
     for α in A
-        B = [i*α/5 for i in 5:20]
+        B = [i*α/5 for i in 5:10]
         for β in B
         # β = 2*α
             difference = sum(diff(k_on,k_off,v_open,v_close,folds,α,β))
@@ -513,6 +513,11 @@ function evaluate(df,k_on,k_off,v_open,v_close,folds)
         # ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β);
         # savefig("D:\\rpa\\figs\\plot_$(k_on)_$(k_off)_$(v_open)_$(v_close)_$(α)_$(β).png")
     end 
+end
+
+function evaluate(df,k_on,k_off,v_open,v_close,folds,α,β)
+    difference = sum(diff(k_on,k_off,v_open,v_close,folds,α,β))
+    push!(df,[k_on,k_off,v_open,v_close,α,β,difference])
 end
 
 function analyze(df,para)

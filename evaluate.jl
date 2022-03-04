@@ -20,6 +20,7 @@ if exp_label== "general" # self-citing
     run(`julia evaluate_1.jl wt_15mM_salt $simu_label`)
     run(`julia evaluate_1.jl wt_150mM_salt $simu_label`)
 else
+    norm_debug = false
     initialize(exp_label,simu_label)
     length_of_paras = length(index_p.k_on)
     @showprogress 1 "analyzing $exp_label..." for i in 1:length_of_paras
@@ -55,7 +56,9 @@ else
     xlims!(1500,2400)
     savefig("./figs/rsa_state_transition_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,v_open,v_close,folds)
-
+    f = open("./figs/sources/loss_$(exp_label)_$(simu_label).csv","w")
+    write(f,minval)
+    close(f)
 ## work completed
 CSV.write("./data_simu/diff_$(exp_label)_$simu_label.csv",df)
 end

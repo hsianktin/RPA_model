@@ -20,7 +20,7 @@ simupath = "$(pwd())/data_simu"
 if length(ARGS) == 1
     exp_label = ARGS[1]
 else
-    exp_label="wt_15mM_salt"
+    exp_label="wt_150mM_salt"
 end
 para_df = CSV.read("figs/sources/para.csv",DataFrame)
 
@@ -32,9 +32,13 @@ paras_names = ["k_on","k_off","v_open","v_close"]
 figpath = "./figs"
 requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for i in 1:length(para_df.L)],:]
 k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
+
+# force resetting k_off
+k_off = 1e-6
+
 p₀=[k_on,k_off,k_open,k_close]
 # for para in paras_names
-#     @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
+#     @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
 #     p,i=findmin(landscape.error)
 #     push!(p₀,landscape.para[i])
 # end
@@ -60,6 +64,33 @@ function simu_paras(p₀) # update the simulation parameters
     global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
     global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
 end
+
+function simu_paras(p₀,it) # update the simulation parameters
+    k_on,k_off,v_open,v_close = p₀
+    lower_limit = 1.0e-6
+    upper_limit = 1e1
+    function modulate(v) # fall between limits
+        if v < lower_limit
+            return lower_limit
+        elseif v > upper_limit
+            return upper_limit
+        else
+            return v
+        end
+    end
+    if it < 6
+        global k_ons = unique([modulate(k_on*(10.0^(i))) for i in -1:1:1])
+        global k_offs = unique([modulate(k_off*(10.0^(i))) for i in -1:1:1])
+        global v_opens = unique([modulate(v_open*(10.0^(i))) for i in -1:1:1])
+        global v_closes = unique([modulate(v_close*(10.0^(i))) for i in -1:1:1])
+    else 
+        global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
+        global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
+        global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
+        global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
+    end
+end
+
 print("parameters initialized.\n")
 # iteration
 while it < 15
@@ -81,7 +112,7 @@ while it < 15
         pₙ = p₀
     end
     global it += 1
-    simu_paras(pₙ)
+    simu_paras(pₙ,it)
     folds = [0,1,4,10,25]
     Ls = [L]
     T1 = 1800.0
@@ -89,6 +120,10 @@ while it < 15
     N = 50
     cmds = Array{Cmd,1}()
     count = 0
+    println(k_ons)
+    println(k_offs)
+    println(v_opens)
+    println(v_closes)
     # while count < 200
         for k_on in k_ons
             for k_off in k_offs
@@ -174,13 +209,13 @@ while it < 15
 end
 
 ## final stage
-# it = 15
-# while !isfile("$figpath/landscape/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
-#     global it -=1
-# end
+it = 15
+while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
+    global it -=1
+end
 p₁ = []
 for para in paras_names
-    @show landscape=CSV.read("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
+    @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
     p,i=findmin(landscape.error)
     push!(p₁,landscape.para[i])
 end
@@ -197,7 +232,8 @@ folds = [0,1,4,10,25,50]
 Ls = [L]
 T1 = 1800.0
 T2 = 600.0
-N = 10
+N = 100
+n = ceil(Int,N/10)
 gaps_type = "exact"
 cmds = Array{Cmd,1}()
 count = 0
@@ -214,7 +250,7 @@ count = 0
                             for fold in folds
                                 global count += 1
                                 if !isfile(simu_fname(exp_label,simu_label,count))
-                                    cmd=`julia simu_base.jl $k_on $k_off $v_open $v_close $fold $L $T1 $T2 $N $(exp_label) $(simu_label)_$count $gaps_type`
+                                    cmd=`julia simu_base.jl $k_on $k_off $v_open $v_close $fold $L $T1 $T2 $n $(exp_label) $(simu_label)_$count $gaps_type`
                                     push!(cmds,cmd)
                                 end
                             end
@@ -226,6 +262,12 @@ count = 0
     end
     # println("command length: $(length(cmds))")
     # use distributed storage for parallel execution.
+    try
+        rm("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv")
+        println("previous results cleared")
+    catch
+        println("no previous results")
+    end
     @showprogress 1 "running for fitted values " pmap(run,cmds)
     for i in 1:count
         try
@@ -277,3 +319,4 @@ count = 0
     end
     run(`julia evaluate_1.jl $exp_label $(simu_label)`)
     run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
+

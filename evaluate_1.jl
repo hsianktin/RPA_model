@@ -29,20 +29,13 @@ else
         # @printf("analyzing progress: %.2f\r",i/length_of_paras)
     end
     # diff contains all the information needed
-    if length(unique(df.k_on)) > 1
-        analyze(df,"k_on")
-    end
-    if length(unique(df.k_off)) > 1
-        analyze(df,"k_off")
-    end
-    if length(unique(df.v_open)) > 1
-        analyze(df,"v_open")
-    end
-    if length(unique(df.v_close)) > 1
-        analyze(df,"v_close")
-    end
+
+    analyze(df,"k_on")
+    analyze(df,"k_off")
+    analyze(df,"v_open")
+    analyze(df,"v_close")
     analyze(df,"α")
-    # analyze(df,"β")
+    analyze(df,"β")
     # CSV.write("./data_simu/analyze_$(exp_label)_$(simu_label).csv")
     minval,index_min = findmin(df.diff)
     println("minval = $minval")
@@ -60,7 +53,9 @@ else
     xlims!(1500,2400)
     savefig("./figs/rsa_state_transition_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,v_open,v_close,folds)
-
+    f = open("./figs/sources/loss_$(exp_label)_$(simu_label).csv","w")
+    write(f,"$minval")
+    close(f)
 ## work completed
 CSV.write("./data_simu/diff_$(exp_label)_$simu_label.csv",df)
 end
