@@ -3,7 +3,7 @@ using Distributed
 using DataFrames
 using CSV
 
-addprocs(12) # determined by the number of processors (cores)
+addprocs(6) # determined by the number of processors (cores)
 @everywhere begin
     using ProgressMeter
 end
@@ -17,14 +17,14 @@ para_df = CSV.read("figs/para_fitted.csv",DataFrame)
 # push!(para_df,[1e-5,1e-3, 1e-4,1e-3,2,3.2,1000,"wt_15mM_salt"])
 # push!(para_df,[1e-5,1e-2, 1e-4,1e-2,2,3.2,1000,"wt_150mM_salt"])
 # CSV.write("figs/sources/para.csv",para_df)
-N = 20
+N = 5
 T1 = 1800.0
 T2 = 600.0
 gaps_type = "exact"
 simupath = "$(pwd())/data_simu"
 folds = [0,1,4,10,25,50]
 simu_folds = [0,1,4,10,25,50]
-Ds = [10.0^(i) for i in 2:2] # range of diffusion
+Ds = [10.0^(i) for i in 3:3] # range of diffusion
 # function pert_paras(p₀,index) # update the simulation parameters
 #     k_on,k_off,v_open,v_close = p₀
 #     lower_limit = 1e-6
@@ -49,14 +49,15 @@ Ds = [10.0^(i) for i in 2:2] # range of diffusion
 #     end
 # end
 simupath="./data_simu"
-L = 5000
+L = 500
 simu_label = "perturb_diffusion_$(rand([i for i in 1000:2000]))"
-simu_label = "perturb_diffusion_1573"
+# simu_label = "perturb_diffusion_1573"
 exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
 for exp_label in exp_labels
     cmds = Array{Cmd,1}()
     print("processing $exp_label...\n")
-    requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for i in 1:length(para_df.L )],:]
+    # requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for i in 1:length(para_df.L )],:]
+    requested_df=para_df[[para_df.exp_label[i] == exp_label for i in 1:length(para_df.L )],:]
     k_on,k_off,k_open,k_close,α,β,_,exp_label,loss = requested_df[1,:]
     count = 0
     global k_ons = [k_on]

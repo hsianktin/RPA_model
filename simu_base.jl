@@ -2,7 +2,7 @@ push!(LOAD_PATH,pwd())
 using TonksGaswithReactionGaps
 simupath = "$(pwd())/data_simu"
 function modulate_data(EX,ET) # record the state of data every second.
-    Time = [i for i in 0:1:2400]
+    Time = [i for i in 0:1:ceil(Int,T1+T2)]
     Ext = [0.0 for i in Time]
     for i in 1:length(EX)
         t = ceil(Int,ET[i])
@@ -12,7 +12,7 @@ function modulate_data(EX,ET) # record the state of data every second.
 end
 
 function modulate_data(Gaps,Time,l1,l2,type = "cumulative")
-    T = [i for i in 0:1:2400]
+    T = [i for i in 0:1:ceil(Int,T1+T2)]
     if type == "cumulative"
         Mod_Gap = Array{Any,1}[]
         for i in 1:l1+l2

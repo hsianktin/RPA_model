@@ -37,13 +37,13 @@ function load(dbpath)
             temp_line_1 = [parse(Float64,i) for i in split(readline(f),",")]
             temp_line_2 = [parse(Float64,i) for i in split(readline(f),",")]
             # temporal QC 
-            if length(temp_line_1) != 2411
-                # println(length(temp_line_1))
-                continue
-            elseif length(temp_line_2) != 2411
-                # println(length(temp_line_2))
-                continue
-            end
+            # if length(temp_line_1) != 2411
+            #     # println(length(temp_line_1))
+            #     continue
+            # elseif length(temp_line_2) != 2411
+            #     # println(length(temp_line_2))
+            #     continue
+            # end
             k_on,k_off,v_open,v_close,fold,L,T1,T2,N,marker = temp_line_1[1:10]
             if marker == 0.0 # marker is used to ensure sequential order, aka the data is intact
                 state_1 = temp_line_1[11:end]
@@ -158,10 +158,10 @@ function initialize(exp_label,simu_label)
     end
     exp_dict_inject.(exp_data_base)
     # global L = 1000
-    global T1 = 1800.0
-    global T2 = 600.0
-    global l1 = 30
-    global l2 = 20
+    # global T1 = mean(T1S)
+    # global T2 = 600.0
+    # global l1 = 30
+    # global l2 = 20
     global index_p = index(k_ons,k_offs,v_opens,v_closes,data_folds,folds)
     global df = DataFrame(k_on = Float64[], k_off = Float64[], v_open = Float64[], v_close = Float64[], α = Float64[], β = Float64[], diff = Float64[])
 end
