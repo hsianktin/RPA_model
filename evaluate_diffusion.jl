@@ -45,7 +45,7 @@ else
     ensemble_plot(k_on,k_off,v_open,v_close,D1,folds,α,β)
     yaxis!(:flip)
     ylims!(-2.0,2.0)
-    xlims!(1500,2400)
+    # xlims!(1500,2400)
     savefig("./figs/rsa_state_transition_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,v_open,v_close,D1,folds)
     f = open("./figs/sources/loss_$(exp_label)_$(simu_label).csv","w")

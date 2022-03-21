@@ -3,6 +3,7 @@ using Base: Float64
 using Plots: push!, position
 # Evaluating Gaps...
 # Only suitable in the case where all data come from the same parameters
+# works in the extension with diffusion, it will also record the information of diffusion into the table
 using Statistics
 using CSV
 using Plots
@@ -77,10 +78,9 @@ using StatsPlots
 
 D1s = unique(df.D1)
 for D1 in D1s
-@df df[(df.time .== 2401).&(df.D1 .== D1),:] groupedhist(:size, group = :fold, bar_position = :dodge)
-title!("Count=$(convert(Int,(maximum(df.id)/(length(unique(df.fold))*length(D1s))))), D1 = D2 = $(D1) /s")
-xlims!(0,40)
-using CSV
-savefig("./figs/exact_gaps_hist_$(exp_label)_$(simu_label)_$(D1).png")
+    @df df[(df.time .== 2401).&(df.D1 .== D1),:] groupedhist(:size, group = :fold, bar_position = :dodge)
+    title!("Count=$(convert(Int,(maximum(df.id)/(length(unique(df.fold))*length(D1s))))), D1 = D2 = $(D1) /s")
+    xlims!(0,40)
+    savefig("./figs/exact_gaps_hist_$(exp_label)_$(simu_label)_$(D1).png")
 end
 CSV.write("./figs/exact_gaps_table_$(exp_label)_$(simu_label).csv",df[findall(x->x∈[30*60+1,31*60+1,32*60+1,40*60+1],df.time),:])

@@ -1,3 +1,5 @@
+# determine the local sensitivity with respect to lengths of DNA.
+# must be run after figs/para_fitted.csv is created
 print("initializing...\n")
 using Distributed
 using DataFrames
@@ -25,9 +27,8 @@ simu_folds = [0,1,4,10,25,50]
 simupath="./data_simu"
 
 # select L of interest:
-Lengths = [50000]
-# exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
-exp_labels = ["wt_150mM_salt"]# resume calculation
+Lengths = [500,5000,50000]
+exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
 print("initialized.....\n")
 for L in Lengths
     simu_label = "L_$(L)_$(rand([i for i in 1:1000]))"

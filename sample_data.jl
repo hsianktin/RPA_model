@@ -16,9 +16,7 @@ exp_folds = [0,1,4,10,25,50]
 simu_folds = [0,1,4,10,25,50]
 
 simu_label = rand([i for i in 1:1000])+4000
-
-
-# select L of interest:
+simu_label = "sample_$(simu_label)"
 exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
 print("initialized.....\n")
 for exp_label in exp_labels
@@ -37,7 +35,7 @@ for exp_label in exp_labels
     ensemble_plot(k_on,k_off,k_open,k_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
     yaxis!(:flip)
     ylims!(-2.0,2.0)
-    xlims!(1500,2400)
+    xlims!(1500,convert(Int,T1+T2))
     savefig("./figs/predict_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,k_open,k_close,simu_folds,exp_label,simu_label)
     print("$exp_label plot completed.\n")

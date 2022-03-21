@@ -6,7 +6,6 @@ A = [i/10 for i in 5:5:100] # values for α to be tested
 
 include("evaluate_base.jl")
 using ProgressMeter
-
 if length(ARGS) == 1
     exp_label = ""
     simu_label = ARGS[1]
@@ -43,18 +42,20 @@ else
     if length(unique(df.v_close)) > 1
         analyze(df,"v_close")
     end
-    analyze(df,"α")
-    analyze(df,"β")
-    # CSV.write("./data_simu/analyze_$(exp_label)_$(simu_label).csv")
+    if length(unique(df.α)) > 1
+        analyze(df,"α")
+    end
+    if length(unique(df.β)) > 1
+        analyze(df,"β")
+    end
     minval,index_min = findmin(df.diff)
     println("minval = $minval")
     k_on,k_off,v_open,v_close,α,β,d=df[index_min,:]
     println(@sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β))
-    # k_on,k_off,v_open,v_close,α,β= 1e-5,1e-4,1e-2,1e-3,1,2
     ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
     yaxis!(:flip)
     ylims!(-2.0,2.0)
-    xlims!(1500,2400)
+    # xlims!(1500,2400)
     savefig("./figs/rsa_state_transition_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,v_open,v_close,folds)
     f = open("./figs/sources/loss_$(exp_label)_$(simu_label).csv","w")

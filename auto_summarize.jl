@@ -1,3 +1,5 @@
+# summarize the data from auto_update.jl
+# create figs/para_fitted.csv
 print("initializing...\n")
 using DataFrames
 using CSV
@@ -20,38 +22,7 @@ simu_label = "fitted"
 gaps_type = "none"
 
 for exp_label in exp_labels
-#     it = 15
-#     while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
-#         it -= 1
-#     end
-#     # summarize all update data
-#     for i in 1:it
-#         try
-#         open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv","r") do input
-#             open("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv","a") do output
-#                 n = countlines(input)
-#                 record = 0
-#                 seekstart(input)
-#                 for k in 1:n
-#                     line = readline(input)
-#                     println(output,line)
-#                     record = record + 1
-#                 end
-#                 # println(record)
-#             end
-#         end
-#         catch
-#         end
-#     end
-#     for i in 1:it
-#         try
-#         rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv")
-#         catch
-#         end
-#     end
     run(`julia evaluate.jl $exp_label $(simu_label)`)
-    # run(`julia preprocess_data.jl $exp_label $(simu_label)`)
-    # run(`julia evaluate_over_preprocessed.jl $exp_label $(simu_label)`)
 end
 
 for exp_label in exp_labels
