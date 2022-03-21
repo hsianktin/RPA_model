@@ -4,7 +4,7 @@ addprocs(10)
 # simu_label="with_diffusion_length"
 # Ls = [1000]
 # for L in Ls
-#     run(`julia evaluate_1.jl $(exp_label) $(simu_label)_$(L)`)
+#     run(`julia evaluate.jl $(exp_label) $(simu_label)_$(L)`)
 # end
 # for L in Ls
 #     run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)_$(L) `)
@@ -13,7 +13,7 @@ addprocs(10)
 # simu_label="length"
 # Ls = [300,800,1000,5000]
 # for L in Ls
-#     run(`julia evaluate_1.jl $(exp_label) $(simu_label)_$(L)`)
+#     run(`julia evaluate.jl $(exp_label) $(simu_label)_$(L)`)
 # end
 # for L in Ls
 #     run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)_$(L) `)
@@ -25,7 +25,7 @@ Ls = [1000]
 cmds = Array{Cmd,1}()
 for exp_label in exp_labels
     for L in Ls
-        push!(cmds,`julia evaluate_1.jl $(exp_label) $(simu_label) `)
+        push!(cmds,`julia evaluate.jl $(exp_label) $(simu_label) `)
         # push!(cmds,`julia exact_gap_analysis.jl $(exp_label) $(simu_label) `)
     end
 end

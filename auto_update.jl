@@ -204,7 +204,7 @@ while it < 15
         catch
         end
     end
-    run(`julia evaluate_1.jl $exp_label $(simu_label)_$(it)`)
+    run(`julia evaluate.jl $exp_label $(simu_label)_$(it)`)
     @show para_df
 end
 
@@ -317,6 +317,6 @@ count = 0
         catch
         end
     end
-    run(`julia evaluate_1.jl $exp_label $(simu_label)`)
+    run(`julia evaluate.jl $exp_label $(simu_label)`)
     run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
 

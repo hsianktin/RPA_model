@@ -17,12 +17,11 @@ else
 end
 
 if exp_label== "general" # self-citing
-    run(`julia evaluate_1.jl wt_15mM_salt $simu_label`)
-    run(`julia evaluate_1.jl wt_150mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_15mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_150mM_salt $simu_label`)
 else
     initialize(exp_label,simu_label)
     length_of_paras = length(index_p.k_on)
-    norm_debug = false
     @showprogress 1 "analyzing $exp_label..." for i in 1:length_of_paras
         local k_on,k_off,v_open,v_close,D1 = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,D1,folds)

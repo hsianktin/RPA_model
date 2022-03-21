@@ -36,8 +36,8 @@ else
 end
 
 if exp_label== "general" # self-citing
-    run(`julia evaluate_1.jl wt_15mM_salt $simu_label`)
-    run(`julia evaluate_1.jl wt_150mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_15mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_150mM_salt $simu_label`)
 else
     initialize(exp_label,simu_label)  
     println("processing experiment data for $exp_label")

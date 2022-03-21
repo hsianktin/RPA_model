@@ -49,7 +49,7 @@ for exp_label in exp_labels
 #         catch
 #         end
 #     end
-    run(`julia evaluate_1.jl $exp_label $(simu_label)`)
+    run(`julia evaluate.jl $exp_label $(simu_label)`)
     # run(`julia preprocess_data.jl $exp_label $(simu_label)`)
     # run(`julia evaluate_over_preprocessed.jl $exp_label $(simu_label)`)
 end

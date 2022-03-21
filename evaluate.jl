@@ -1,11 +1,15 @@
-A = [i/10 for i in 5:5:100]
+# Based on evaluate_base, provide information about losses and landscape.
+# variants include evaluate_sensitivity.jl and evaluate_diffusion.jl
+
+
+A = [i/10 for i in 5:5:100] # values for α to be tested
+
 include("evaluate_base.jl")
 using ProgressMeter
 
 if length(ARGS) == 1
     exp_label = ""
     simu_label = ARGS[1]
-    # simu_label = "wt_15mM_salt"
 elseif length(ARGS) == 2
     exp_label=ARGS[1]
     println("exp_label=$exp_label")
@@ -17,17 +21,14 @@ else
 end
 
 if exp_label== "general" # self-citing
-    run(`julia evaluate_1.jl wt_15mM_salt $simu_label`)
-    run(`julia evaluate_1.jl wt_150mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_15mM_salt $simu_label`)
+    run(`julia evaluate.jl wt_150mM_salt $simu_label`)
 else
-    norm_debug = false
     initialize(exp_label,simu_label)
     length_of_paras = length(index_p.k_on)
     @showprogress 1 "analyzing $exp_label..." for i in 1:length_of_paras
         local k_on,k_off,v_open,v_close = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,folds)
-        # @printf("analyzing progress: %.2f\r",i/length_of_paras)
-        
     end
     # diff contains all the information needed
     if length(unique(df.k_on)) > 1

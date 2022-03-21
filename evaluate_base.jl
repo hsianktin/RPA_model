@@ -1,3 +1,4 @@
+# Basis for evaluation related functions. Load necessary data and provide a set of functions to evaluate the performance of the parameters.
 using Statistics
 using CSV
 using Plots
@@ -465,9 +466,6 @@ function diff(EX,μ_X,type="squared errors")
         end
         EX′ = Gaussian_derivative(EX[1800:2400])
         μ_X′ = Gaussian_derivative(μ_X[1800:2400])        
-        if norm_debug == true
-            println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
-        end
         return derivative + sum((EX′.-μ_X′).^2)*0
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))
