@@ -3,7 +3,6 @@ using Statistics
 using CSV
 using Plots
 using DataFrames
-using FFTW
 using DelimitedFiles
 using Printf
 simupath = "$(pwd())/data_simu"
@@ -159,8 +158,8 @@ function initialize(exp_label,simu_label)
     end
     exp_dict_inject.(exp_data_base)
     # global L = 1000
-    # global T1 = mean(T1S)
-    # global T2 = 600.0
+    global T1 = mean(T1S)
+    global T2 = mean(T2S)
     # global l1 = 30
     # global l2 = 20
     global index_p = index(k_ons,k_offs,v_opens,v_closes,data_folds,folds)
