@@ -25,7 +25,7 @@ gaps_type = "exact"
 simupath = "$(pwd())/data_simu"
 folds = [0,1,4,10,25,50]
 simu_folds = [0,1,4,10,25,50]
-Ds = [10.0^(i) for i in 3] # range of diffusion
+Ds = [10.0^(i) for i in 3:3] # range of diffusion
 # function pert_paras(p₀,index) # update the simulation parameters
 #     k_on,k_off,v_open,v_close = p₀
 #     lower_limit = 1e-6

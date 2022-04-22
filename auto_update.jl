@@ -34,7 +34,7 @@ requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for
 k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
 
 # force resetting k_off
-k_off = 1e-6
+# k_off = 1e-6
 
 p₀=[k_on,k_off,k_open,k_close]
 # for para in paras_names
