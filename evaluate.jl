@@ -1,6 +1,6 @@
 # Based on evaluate_base, provide information about losses and landscape.
 # variants include evaluate_sensitivity.jl and evaluate_diffusion.jl
-
+using DataFrames,CSV
 
 A = [i/10 for i in 5:5:100] # values for α to be tested
 
@@ -30,24 +30,24 @@ else
         evaluate(df,k_on,k_off,v_open,v_close,folds)
     end
     # diff contains all the information needed
-    if length(unique(df.k_on)) > 1
+    # if length(unique(df.k_on)) > 1
         analyze(df,"k_on")
-    end
-    if length(unique(df.k_off)) > 1
+    # end
+    # if length(unique(df.k_off)) > 1
         analyze(df,"k_off")
-    end
-    if length(unique(df.v_open)) > 1
+    # end
+    # if length(unique(df.v_open)) > 1
         analyze(df,"v_open")
-    end
-    if length(unique(df.v_close)) > 1
+    # end
+    # if length(unique(df.v_close)) > 1
         analyze(df,"v_close")
-    end
-    if length(unique(df.α)) > 1
+    # end
+    # if length(unique(df.α)) > 1
         analyze(df,"α")
-    end
-    if length(unique(df.β)) > 1
+    # end
+    # if length(unique(df.β)) > 1
         analyze(df,"β")
-    end
+    # end
     minval,index_min = findmin(df.diff)
     println("minval = $minval")
     k_on,k_off,v_open,v_close,α,β,d=df[index_min,:]
@@ -57,10 +57,18 @@ else
     ylims!(-2.0,2.0)
     # xlims!(1500,2400)
     savefig("./figs/rsa_state_transition_$(exp_label)_$simu_label.svg")
-    microstates_plot(k_on,k_off,v_open,v_close,folds)
-    f = open("./figs/sources/loss_$(exp_label)_$(simu_label).csv","w")
-    write(f,minval)
-    close(f)
+    # microstates_plot(k_on,k_off,v_open,v_close,folds)
+    paradf = DataFrame(
+        k_on = [k_on],
+        k_off = [k_off],
+        v_open = [v_open],
+        v_close = [v_close],
+        α = [α],
+        β = [β],
+        loss = [minval]
+    )
+    f = "./figs/sources/loss_$(exp_label)_$(simu_label).csv"
+    CSV.write(f,paradf)
 ## work completed
 CSV.write("./data_simu/diff_$(exp_label)_$simu_label.csv",df)
 end

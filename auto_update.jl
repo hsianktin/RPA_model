@@ -22,7 +22,7 @@ if length(ARGS) == 1
 else
     exp_label="wt_150mM_salt"
 end
-para_df = CSV.read("figs/sources/para.csv",DataFrame)
+para_df = CSV.read("figs/sources/ini_para.csv",DataFrame)
 
 init_label="init"
 simu_label = "update"
@@ -59,10 +59,10 @@ function simu_paras(p₀) # update the simulation parameters
             return v
         end
     end
-    global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
-    global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
-    global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
-    global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
+    global k_ons = unique([modulate(k_on*(10.0^(i/8))) for i in -1:1:1])
+    global k_offs = unique([modulate(k_off*(10.0^(i/8))) for i in -1:1:1])
+    global v_opens = unique([modulate(v_open*(10.0^(i/8))) for i in -1:1:1])
+    global v_closes = unique([modulate(v_close*(10.0^(i/8))) for i in -1:1:1])
 end
 
 function simu_paras(p₀,it) # update the simulation parameters
@@ -79,15 +79,15 @@ function simu_paras(p₀,it) # update the simulation parameters
         end
     end
     if it < 6
-        global k_ons = unique([modulate(k_on*(10.0^(i))) for i in -1:1:1])
-        global k_offs = unique([modulate(k_off*(10.0^(i))) for i in -1:1:1])
-        global v_opens = unique([modulate(v_open*(10.0^(i))) for i in -1:1:1])
-        global v_closes = unique([modulate(v_close*(10.0^(i))) for i in -1:1:1])
+        global k_ons = unique([modulate(k_on*(10.0^(i/4))) for i in -1:1:1])
+        global k_offs = unique([modulate(k_off*(10.0^(i/4))) for i in -1:1:1])
+        global v_opens = unique([modulate(v_open*(10.0^(i/4))) for i in -1:1:1])
+        global v_closes = unique([modulate(v_close*(10.0^(i/4))) for i in -1:1:1])
     else 
-        global k_ons = unique([modulate(k_on*(10.0^(i/2))) for i in -1:1:1])
-        global k_offs = unique([modulate(k_off*(10.0^(i/2))) for i in -1:1:1])
-        global v_opens = unique([modulate(v_open*(10.0^(i/2))) for i in -1:1:1])
-        global v_closes = unique([modulate(v_close*(10.0^(i/2))) for i in -1:1:1])
+        global k_ons = unique([modulate(k_on*(10.0^(i/8))) for i in -1:1:1])
+        global k_offs = unique([modulate(k_off*(10.0^(i/8))) for i in -1:1:1])
+        global v_opens = unique([modulate(v_open*(10.0^(i/8))) for i in -1:1:1])
+        global v_closes = unique([modulate(v_close*(10.0^(i/8))) for i in -1:1:1])
     end
 end
 
