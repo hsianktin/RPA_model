@@ -19,8 +19,8 @@ elseif length(ARGS) == 2
     simu_label=ARGS[2]
     println("simu_label=$simu_label")
 else
-    exp_label = "wt_15mM_salt"
-    simu_label = "length_1000"
+    exp_label = "wt_150mM_salt"
+    simu_label = "fitted"
 end
 
 simupath = "$(pwd())/data_simu"
@@ -70,11 +70,40 @@ df = load(dbpath(exp_label,simu_label))
 T = [i for i in 0:1:2400]
 T₀ = 1800
 T₁ = 2400
-using StatsPlots
+L = 5000
+# using StatsPlots
 
-@df df[df.time .== 2401,:] groupedhist(:size, group = :fold, bar_position = :dodge)
-title!("Count=$(maximum(df.id)/length(unique(df.fold)))")
-xlims!(0,40)
+# @df df[df.time .== 2401,:] groupedhist(:size, group = :fold, bar_position = :dodge)
+target_group_size = 18
+temp_df = df[df.time .== 2401,:]
+report_df = DataFrame(
+    fraction_exposure=Float64[],
+    fold=Int64[],
+    id=Int64[]
+    )
+function f_exp(sizes,L)
+    return sum([gap for gap in sizes if gap ≥ target_group_size])/L
+end
+ID = unique(temp_df.id)
+for id in ID
+    temp_df2 = temp_df[temp_df.id .== id,:]
+    push!(report_df,[f_exp(temp_df2.size,L),temp_df2.fold[1],id])
+end
+summary_df = DataFrame(
+    mean_fraction_exposure = Float64[],
+    std_fraction_exposure = Float64[],
+    fold = Int64[]
+)
+for fold in unique(report_df.fold)
+    temp_df2 = report_df[report_df.fold .== fold,:]
+    push!(summary_df,[mean(temp_df2.fraction_exposure),std(temp_df2.fraction_exposure),fold])
+end
+summary_df
+
+# title!("Count=$(maximum(df.id)/length(unique(df.fold)))")
+# xlims!(0,40)
 using CSV
 CSV.write("./figs/exact_gaps_table_$(exp_label)_$(simu_label).csv",df[findall(x->x∈[30*60+1,31*60+1,32*60+1,40*60+1],df.time),:])
-savefig("./figs/exact_gaps_hist_$(exp_label)_$(simu_label).png")
+# savefig("./figs/exact_gaps_hist_$(exp_label)_$(simu_label).png")
+CSV.write("./figs/fraction_exposure_$(exp_label)_$(simu_label).csv",report_df)
+CSV.write("./figs/stats_fraction_exposure_$(exp_label)_$(simu_label).csv",summary_df)

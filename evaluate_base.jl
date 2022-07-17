@@ -115,12 +115,6 @@ function initialize(exp_label,simu_label)
     if exp_label == "wt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25),("wt",50)]
         global folds = [0,1,4,10,25]
-    elseif exp_label == "ewt_15mM_salt"
-        global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
-        global folds = [0,1,4,10,25,50]
-    elseif exp_label == "vitro"
-        global exp_data_base=[("wt",0),("wt",0.1),("wt",0.4),("wt",1.0),("wt",2.5)]
-        global folds = [50]
     elseif exp_label == "wt_150mM_salt"
         global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25),("lwt",50)]
         global folds = [0,1,4,10,25]
@@ -339,6 +333,7 @@ function trace_plot!(datapath,fig_label)
     # end
     time_course, μ_X, σ_X = access_trace_statistics(datapath)
     plot!(time_course,μ_X,ribbon=σ_X,fillalpha=.1,lw=5,label=fig_label) 
+    return (time_course, μ_X, σ_X, fig_label)
 end
 
 function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
@@ -357,11 +352,15 @@ function ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β)
     end
 end
 
-function ensemble_plot(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
-    fig=plot(size=(800,1600))
+function ensemble_plot_int(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
+    plot_df = DataFrame(T=Float64[], X=Float64[], ΔX = Float64[], label= String[])
+    # fig=plot(size=(800,1600))
     for fold in exp_folds
         conc = convert(Float64,fold)
-        trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
+        t_X,μ_X,σ_X,label = trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
+        # for i in 1:length(t_X)
+        #     push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
+        # end
     end
     for fold in simu_folds
         t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
@@ -369,7 +368,21 @@ function ensemble_plot(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,exp_
         temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
         CSV.write("./figs/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
         label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β)
-        plot!(t_X,μ_X,line=:dash,lw=5,label = label)
+        # plot!(t_X,μ_X,line=:dash,lw=5,label = label)
+        # for i in 1:length(t_X)
+        #     push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
+        # end
+    end
+    p=Plotly.plot(
+        plot_df,
+        x=:T,
+        y=:X,
+        error_y=:ΔX,
+        group=:label,
+    )
+    CSV.write("./figs/sources/ensemble_plot_df_$(exp_label)_$(simu_label).csv",plot_df)
+    open("figs/ensemble_plot_$(exp_label)_$(simu_label).html","w") do io
+        PlotlyBase.to_html(io,p.plot)
     end
 end
 
@@ -393,22 +406,45 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds)
 end
 
 function microstates_plot(k_on,k_off,v_open,v_close,folds,exp_label,simu_label)
-    plot_array = Any[] # can type this more strictly
+    plot_df = DataFrame(T=Float64[], mode30nt=Float64[], mode20nt=Float64[], std_mode30nt=Float64[],std_mode20nt=Float64[], label=String[])
     for fold in folds
         t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
         label = @sprintf("fold = %.1f",fold)
         temp_df = DataFrame(time=t_X,ABCD=μ_1,ABC=μ_2,sd_ABCD=σ_1,sd_ABC=σ_2)
+        for i in 1:length(t_X)
+            push!(plot_df, [t_X[i], μ_1[i], μ_2[i], σ_1[i], σ_2[i], label])
+        end
         CSV.write("./figs/microstates_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
         # fig = plot()
         # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
-        push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",legend=false)) # make a plot and add it to the plot_array
+        # push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",legend=false)) # make a plot and add it to the plot_array
     end
-    if length(folds)==5
-    plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
-    elseif length(folds)==6
-        plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
+    CSV.write("figs/sources/microstate_$(exp_label)_$(simu_label).csv",plot_df)
+    p1 = Plotly.plot(
+        plot_df,
+        x = :T,
+        y = :mode30nt,
+        # error_y = 
+    )
+    CSV.write("./figs/sources/microstates_plot_df_$(exp_label)_$(simu_label).csv",plot_df)
+    open("figs/microstates_plot_1_$(exp_label)_$(simu_label).html","w") do io
+        PlotlyBase.to_html(io,p1.plot)
     end
-    savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
+    p2 = Plotly.plot(
+        plot_df,
+        x = :T,
+        y = :mode20nt,
+        # error_y = 
+    )
+    open("figs/microstates_plot_2_$(exp_label)_$(simu_label).html","w") do io
+        PlotlyBase.to_html(io,p2.plot)
+    end
+    # if length(folds)==5
+    # plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
+    # elseif length(folds)==6
+    #     plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
+    # end
+    # savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end
 
 function access_occupancy(k_on,k_off,v_open,v_close,fold)
@@ -499,7 +535,7 @@ end
 function evaluate(df,k_on,k_off,v_open,v_close,folds)
 
     for α in A
-        B = [i*α/5 for i in 5:10]
+        B = [i*α/5 for i in 7:20]
         for β in B
         # β = 2*α
             difference = sum(diff(k_on,k_off,v_open,v_close,folds,α,β))

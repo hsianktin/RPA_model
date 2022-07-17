@@ -15,7 +15,7 @@ para_df = CSV.read("figs/para_fitted.csv",DataFrame)
 # push!(para_df,[1e-5,1e-3, 1e-4,1e-3,2,3.2,1000,"wt_15mM_salt"])
 # push!(para_df,[1e-5,1e-2, 1e-4,1e-2,2,3.2,1000,"wt_150mM_salt"])
 
-# CSV.write("figs/sources/para.csv",para_df)
+# CSV.write("figs/sources/ini_para.csv",para_df)
 N = 10 # copy per command, total 100 copies per parameter combination
 T1 = 1800.0
 T2 = 600.0

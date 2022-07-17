@@ -2,7 +2,7 @@
 # create figs/para_fitted.csv
 print("initializing...\n")
 using DataFrames
-using CSV
+using CSV,DataFrames
 using ProgressMeter
 function simu_fname(exp_label,simu_label,count)
     return "$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$count.csv"
@@ -26,16 +26,16 @@ for exp_label in exp_labels
 end
 
 for exp_label in exp_labels
-    p₀ = []
-    for para in paras_names
-        @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label).csv",DataFrame)
-        p,i=findmin(landscape.error)
-        push!(p₀,landscape.para[i])
-    end
-    f = open("figs/sources/loss_$(exp_label)_$(simu_label).csv","r")
-    loss = parse(Float64,readline(f))
-    close(f)
-    push!(para_df,vcat(p₀,[L,exp_label,loss]))
+    # p₀ = []
+    # for para in paras_names
+    #     @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label).csv",DataFrame)
+    #     p,i=findmin(landscape.error)
+    #     push!(p₀,landscape.para[i])
+    # end
+    temp_df = CSV.read("figs/sources/loss_$(exp_label)_$(simu_label).csv",DataFrame)
+    print(temp_df)
+    k_on,k_off,v_open,v_close,α,β,loss = temp_df[1,:]
+    push!(para_df,[k_on,k_off,v_open,v_close,α,β,L,exp_label,loss])
 end
 
 CSV.write("$figpath/para_$(simu_label).csv",para_df)

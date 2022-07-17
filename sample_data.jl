@@ -1,12 +1,13 @@
 print("initializing...\r")
 using DataFrames
+using Plotly
 using ProgressMeter
 using CSV
 para_df = CSV.read("figs/para_fitted.csv",DataFrame)
 # push!(para_df,[1e-5,1e-3, 1e-4,1e-3,2,3.2,1000,"wt_15mM_salt"])
 # push!(para_df,[1e-5,1e-2, 1e-4,1e-2,2,3.2,1000,"wt_150mM_salt"])
 
-CSV.write("figs/sources/para.csv",para_df)
+CSV.write("figs/sources/ini_para.csv",para_df)
 N = 100
 T1 = 1800.0
 T2 = 5400.0
@@ -18,6 +19,7 @@ simu_folds = [0,1,4,10,25,50,100,200]
 simu_label = rand([i for i in 1:1000])+4000
 simu_label = "extended_sample_$(simu_label)"
 exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
+exp_label = exp_labels[2]# test only
 print("initialized.....\n")
 for exp_label in exp_labels
     L = 5000
@@ -32,11 +34,11 @@ for exp_label in exp_labels
     include("evaluate_base.jl")
     initialize(exp_label,simu_label)
     print("\n$exp_label data loaded...\n")
-    ensemble_plot(k_on,k_off,k_open,k_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
-    yaxis!(:flip)
-    ylims!(-2.0,2.0)
-    xlims!(1500,convert(Int,T1+T2))
-    savefig("./figs/predict_$(exp_label)_$simu_label.svg")
+    ensemble_plot_int(k_on,k_off,k_open,k_close,simu_folds,exp_folds,α,β,exp_label,simu_label)
+    # yaxis!(:flip)
+    # ylims!(-2.0,2.0)
+    # xlims!(1500,convert(Int,T1+T2))
+    # savefig("./figs/predict_$(exp_label)_$simu_label.svg")
     microstates_plot(k_on,k_off,k_open,k_close,simu_folds,exp_label,simu_label)
     print("$exp_label plot completed.\n")
     run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
