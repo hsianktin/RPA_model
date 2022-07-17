@@ -358,9 +358,9 @@ function ensemble_plot_int(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,
     for fold in exp_folds
         conc = convert(Float64,fold)
         t_X,μ_X,σ_X,label = trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
-        # for i in 1:length(t_X)
-        #     push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
-        # end
+        for i in 1:length(t_X)
+            push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
+        end
     end
     for fold in simu_folds
         t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,fold,α,β)
@@ -369,9 +369,9 @@ function ensemble_plot_int(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,
         CSV.write("./figs/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
         label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β)
         # plot!(t_X,μ_X,line=:dash,lw=5,label = label)
-        # for i in 1:length(t_X)
-        #     push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
-        # end
+        for i in 1:length(t_X)
+            push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
+        end
     end
     p=Plotly.plot(
         plot_df,
@@ -424,6 +424,7 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds,exp_label,simu_label)
         plot_df,
         x = :T,
         y = :mode30nt,
+        group = :label,
         # error_y = 
     )
     CSV.write("./figs/sources/microstates_plot_df_$(exp_label)_$(simu_label).csv",plot_df)
@@ -434,6 +435,7 @@ function microstates_plot(k_on,k_off,v_open,v_close,folds,exp_label,simu_label)
         plot_df,
         x = :T,
         y = :mode20nt,
+        group = :label,
         # error_y = 
     )
     open("figs/microstates_plot_2_$(exp_label)_$(simu_label).html","w") do io
