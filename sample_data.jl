@@ -9,14 +9,14 @@ para_df = CSV.read("figs/para_fitted.csv",DataFrame)
 CSV.write("figs/sources/para.csv",para_df)
 N = 100
 T1 = 1800.0
-T2 = 600.0
+T2 = 5400.0
 gaps_type = "exact"
 
 exp_folds = [0,1,4,10,25,50]
-simu_folds = [0,1,4,10,25,50]
+simu_folds = [0,1,4,10,25,50,100,200]
 
 simu_label = rand([i for i in 1:1000])+4000
-simu_label = "sample_$(simu_label)"
+simu_label = "extended_sample_$(simu_label)"
 exp_labels = ["wt_15mM_salt","wt_150mM_salt"]
 print("initialized.....\n")
 for exp_label in exp_labels

@@ -166,8 +166,8 @@ function initialize(exp_label,simu_label)
     end
     exp_dict_inject.(exp_data_base)
     # global L = 1000
-    # global T1 = 1800.0
-    # global T2 = 600.0
+    global T1 = mean(T1S)
+    global T2 = mean(T2S)
     # global l1 = 30
     # global l2 = 20
     global index_p = index(k_ons,k_offs,v_opens,v_closes,D1s,data_folds,folds)
@@ -432,9 +432,7 @@ function diff(EX,μ_X,type="squared errors")
         end
         EX′ = Gaussian_derivative(EX[1800:2400])
         μ_X′ = Gaussian_derivative(μ_X[1800:2400])        
-        if norm_debug == true
-            println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
-        end
+            # println("0-norm: $(derivative), 1-norm: $(sum((EX′.-μ_X′).^2)*5)")
         return derivative + sum((EX′.-μ_X′).^2)*0
     elseif type == "maximum"
         difference = maximum(abs.(EX[1800:2400].-μ_X[1800:2400]))

@@ -47,6 +47,8 @@ end
 
 try
     mkdir("figs")
+    mkdir("figs/landscape")
+    mkdir("figs/sources")
 catch
     println("figs/ already exists")
 end
