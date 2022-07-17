@@ -1,0 +1,1 @@
+Figure. The local loss function landscape with respect to single parameter. Here, we keep all the rest parameters invariant, and mutating the values of the focal parameter. The simulation is repeated 7 times. We plot the mean and standard deviation of the resultant losses evaluated by the prescribed weighted mean square deviation as a function of the focal parameter.
