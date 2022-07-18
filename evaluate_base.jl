@@ -367,7 +367,7 @@ function ensemble_plot_int(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,
         t_X=[i for i in 1:length(μ_X)]
         temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
         CSV.write("./figs/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
-        label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β)
+        label = @sprintf("simulation $fold")
         # plot!(t_X,μ_X,line=:dash,lw=5,label = label)
         for i in 1:length(t_X)
             push!(plot_df, [t_X[i],μ_X[i], σ_X[i], label ])
@@ -379,6 +379,7 @@ function ensemble_plot_int(k_on,k_off,v_open,v_close,simu_folds,exp_folds,α,β,
         y=:X,
         error_y=:ΔX,
         group=:label,
+        title = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,α,β), 
     )
     CSV.write("./figs/sources/ensemble_plot_df_$(exp_label)_$(simu_label).csv",plot_df)
     open("figs/ensemble_plot_$(exp_label)_$(simu_label).html","w") do io
