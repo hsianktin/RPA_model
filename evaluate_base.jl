@@ -1,10 +1,14 @@
 # Basis for evaluation related functions. Load necessary data and provide a set of functions to evaluate the performance of the parameters.
 using Statistics
+using Pipe
 using CSV
 using Plots
 using DataFrames
 using DelimitedFiles
 using Printf
+∑(x) = sum(x)
+dbpath = raw"C:\Users\Lixti\Downloads\rsa_plot_wt_15mM_salt_update_1.csv"
+T = 2400
 simupath = "$(pwd())/data_simu"
 mainpath = pwd()
 exppath = "$mainpath/data_exp"
@@ -27,6 +31,169 @@ function dbpath(exp_label,simu_label)
     path = "$simupath/rsa_plot_$(exp_label)_$(simu_label).csv"
     return path
 end
+
+# need to specify total time T, assume that the data is stored per minute
+function load_simu_df(dbpath,T)
+    # rewrite the load function using  DataFrames
+    para_headers = [:k_on,:k_off,:v_open,:v_close,:fold,:L,:T1,:T2,:N,:mode]
+    headers = vcat(para_headers, [Symbol(i) for i ∈ 0:T])
+    df = CSV.read(dbpath, header=headers, DataFrame)
+    ids = Array{Int}(undef,nrow(df))
+    id = 0
+    init_fold = df.fold[1]
+    for i in 1:nrow(df)
+        if i % 2 == 1
+            if df.fold[i] == init_fold
+                id += 1
+            else
+                id = 1
+                init_fold = df.fold[i]
+            end
+        end
+        ids[i] = id
+    end
+    df.id = ids
+    mode(x) = x == 0 ? "fraction_30nt" : "fraction_20nt"
+    df.modes .= mode.(df.mode)
+    para_headers = [:id,:k_on,:k_off,:v_open,:v_close,:fold,:L,:T1,:T2,:N,:modes]
+    compact_para_headers = [:id,:k_on,:k_off,:v_open,:v_close,:fold,:L,:T1,:T2,:N, :time]
+    long_df = @pipe df |>
+                filter(row -> row.id ≤ 10,_) |>
+                stack(
+                    _, 
+                    [Symbol(i) for i ∈ 1:T], 
+                    para_headers, 
+                    variable_name=:time, 
+                    value_name=:fraction,
+                ) |>
+                transform(
+                    _, 
+                    :time => ByRow(x -> parse(Float64,x)) => :time
+                    ) |>
+                unstack(
+                     _,
+                     compact_para_headers,
+                     :modes,
+                     :fraction,
+                     allowduplicates=false
+                    )
+    compact_para_headers = [:k_on,:k_off,:v_open,:v_close,:fold,:L,:T1,:T2,:N, :time]
+    microstates_stats = @pipe long_df |> 
+        groupby(_, compact_para_headers) |>
+        combine(_, 
+               :fraction_30nt => mean =>:f̄₃₀,
+               :fraction_30nt => std => :Δf₃₀,
+               :fraction_20nt => mean =>:f̄₂₀,
+               :fraction_20nt => std => :Δf₂₀,
+              ) |>
+        sort(
+            _,
+            compact_para_headers
+        )
+    return microstates_stats
+end
+
+function load_exp_df(folds, exp_dict)
+    exp_df = DataFrame(fold = Float64[], ℓ̄ = Float64[], Δℓ̄ = Float64[], time = Float64[])
+    for fold ∈ folds
+        conc = convert(Float64, fold)
+        T, L , ΔL = access_trace_statistics(exp_dict["$conc"][1])
+        for i ∈ 1:length(T)
+            push!(exp_df, [fold, L[i], ΔL[i], T[i]])
+        end
+    end
+    return exp_df
+end
+
+function initialize(exp_label,simu_label,T)
+    if exp_label == "wt_15mM_salt"
+        global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25),("wt",50)]
+        global folds = [0,1,4,10,25]
+    elseif exp_label == "wt_150mM_salt"
+        global exp_data_base=[("lwt",0),("lwt",1),("lwt",4),("lwt",10),("lwt",25),("lwt",50)]
+        global folds = [0,1,4,10,25]
+    end
+    function salt_concentration(type) # historically, the wt label refers to wt at 15mM salt; lwt for 150mM salt.
+        if type == "wt"
+            return "15mM salt"
+        elseif type == "lwt"
+            return "150mM salt"
+        end
+    end
+    function exp_dict_inject(type::String,concentration::Float64)
+        datapath = "$(mainpath)/data_exp/exp_data_$(type)$(concentration)/"
+        fig_label = "$(salt_concentration(type)) yRPA 0.1nM to $(concentration)nM"
+        exp_dict["$concentration"]=[datapath,fig_label]
+    end
+    function exp_dict_inject(type::String,concentration::Int)
+        datapath = "$(mainpath)/data_exp/exp_data_$(type)$(concentration)/"
+        fig_label = "$(salt_concentration(type)) yRPA 0.1nM to $(concentration)nM"
+        exp_dict["$(convert(Float64,concentration))"]=[datapath,fig_label]
+    end
+    function exp_dict_inject(tuple::Tuple)
+        if length(tuple) == 2
+            type,concentration = tuple
+            exp_dict_inject(type,concentration)
+        else
+            println("input not match")
+        end
+    end
+    exp_dict_inject.(exp_data_base)
+    dbpath = dbpath(exp_label,simu_label)
+    simu_df = load_simu_df(dbpath,T)
+    exp_df = load_exp_df(data_folds, exp_dict)
+    return simu_df, exp_df
+end
+
+function fit(folds,f₃₀,f₂₀,ℓ,time)
+    local df = DataFrame(fold=folds, f₃₀=f₃₀, f₂₀=f₂₀, ℓ=ℓ, time=time)
+    loss_df = DataFrame(α=Float64[], β=Float64[], difference=Float64[])
+    for α in A
+        B = [i*α/5 for i in 7:20]
+        for β in B
+        # β = 2*α
+            difference = 0
+            for fold in df.fold
+                df_slice = @pipe df |>
+                    filter(row -> row.fold == fold && row.time ≥ 1600, _)
+                y = df_slice.ℓ
+                f₃₀ = df_slice.f₃₀
+                f₂₀ = df_slice.f₂₀
+                t = df_slice.time
+                ŷ = α*f₃₀+β*f₂₀+(-α-β.+1) |> (x -> x./mean(x[t. ≤ 1800]))
+                ε = y-ŷ
+                difference += ∑(ε'*ε)
+            end
+            push!(loss_df,[α,β,difference])
+            # println([k_on,k_off,v_open,v_close,α,β,difference])
+        end
+        # only enabled in lab 
+        # ensemble_plot(k_on,k_off,v_open,v_close,folds,α,β);
+        # savefig("D:\\rpa\\figs\\plot_$(k_on)_$(k_off)_$(v_open)_$(v_close)_$(α)_$(β).png")
+    end
+    α,β,difference = @pipe loss_df |> sort(_,:difference) |> x -> x[1,:]
+    return (α,β,difference)
+end
+
+function analyze_df(microstates_stats, exp_df)
+    times = exp_df.time
+    simu_df = filter(row -> row.time ∈ times, microstates_stats)
+    # require that the microstates_stats are well sorted
+    ℓ = exp_df.ℓ
+    para_headers = [:k_on,:k_off,:v_open,:v_close,:L,:T1,:T2,:N]
+    @pipe simu_df |>
+        groupby(_, para_headers) |>
+        combine(_,
+            [:fold, :f₃₀, :f₂₀] => ((x,y,z) -> (α,β,loss)=fit(x,y,z,ℓ,times)) => AsTable,
+        )
+    result = @pipe simu_df |>
+            sort(_,:loss) |>
+            select(_,[:k_on,:k_off,:v_open,:v_close,:α,:β,:loss]) |>
+            x -> x[1,:]
+    return result
+end
+
+
 function load(dbpath)
     f = open(dbpath,"r")
     n = countlines(f)
@@ -72,6 +239,8 @@ function load(dbpath)
     close(f)
     # data_frame = DataFrame(k_on=k_ons,k_off=k_offs,v_open=v_opens,v_close=v_closes,fold=data_folds,L=Ls,state_1=state_1s,state_2=state_2s)
 end
+
+
 function index(k_ons,k_offs,v_opens,v_closes,data_folds,folds)
     index_p = DataFrame(k_on= Float64[], k_off= Float64[], v_open= Float64[], v_close= Float64[])
     # index_p = zeros(0,6)
@@ -174,46 +343,37 @@ function access(k_on,k_off,v_open,v_close,fold)
     return [state_1s[bit_index], state_2s[bit_index]]
 end
 
+function norm(μ_state_1,μ_state_2,α,β)
+    μ_1 = mean([μ_state_1[1775],μ_state_1[1790]])
+    μ_2 = mean([μ_state_2[1775],μ_state_2[1790]])
+    sum = α*μ_1 + β*μ_2 + (1-μ_1-μ_2)
+    return sum
+end
+
 function trace_statistics(state_1_collection,state_2_collection,α,β) # convert simulation data the mean observed normalized extension
     time_course = [t for t in 1:ceil(T1+T2)]
-    function mean_trace(state_collection)
-        μ_state = Array{Float64,1}()
-        σ_state = Array{Float64,1}()
-        time_course = [t for t in 1:ceil(T1+T2)]
-        for i in 1:length(time_course)
-            X_temp = [x[i] for x in state_collection]
-            push!(μ_state,mean(X_temp))
-            push!(σ_state,std(X_temp))
-        end
-        return [μ_state,σ_state]
-    end
     μ_state_1,σ_state_1 = mean_trace(state_1_collection)
     μ_state_2,σ_state_2 = mean_trace(state_2_collection)
-    function norm(μ_state_1,μ_state_2,α,β)
-        μ_1 = mean([μ_state_1[1775],μ_state_1[1790]])
-        μ_2 = mean([μ_state_2[1775],μ_state_2[1790]])
-        sum = α*μ_1 + β*μ_2 + (1-μ_1-μ_2)
-        return sum
-    end
     μ_X = [α*μ_state_1[i] + β*μ_state_2[i] + (1-μ_state_1[i]-μ_state_2[i]) for i in 1:length(μ_state_1)]
     μ_X = μ_X./norm(μ_state_1,μ_state_2,α,β)
     σ_X = ((α.*σ_state_1).+(β.*σ_state_2))./norm(μ_state_1,μ_state_2,α,β)
     return (time_course,μ_X,σ_X)
 end
 
+function mean_trace(state_collection)
+    μ_state = Array{Float64,1}()
+    σ_state = Array{Float64,1}()
+    time_course = [t for t in 1:ceil(T1+T2)]
+    for i in 1:length(time_course)
+        X_temp = [x[i] for x in state_collection]
+        push!(μ_state,mean(X_temp))
+        push!(σ_state,std(X_temp))
+    end
+    return [μ_state,σ_state]
+end
+
 function microstates(state_1_collection,state_2_collection) # convert simulation data the mean observed normalized extension
     time_course = [t for t in 1:ceil(T1+T2)]
-    function mean_trace(state_collection)
-        μ_state = Array{Float64,1}()
-        σ_state = Array{Float64,1}()
-        time_course = [t for t in 1:ceil(T1+T2)]
-        for i in 1:length(time_course)
-            X_temp = [x[i] for x in state_collection]
-            push!(μ_state,mean(X_temp))
-            push!(σ_state,std(X_temp))
-        end
-        return [μ_state,σ_state]
-    end
     μ_state_1,σ_state_1 = mean_trace(state_1_collection)
     μ_state_2,σ_state_2 = mean_trace(state_2_collection)
     return (time_course,μ_state_1,μ_state_2,σ_state_1,σ_state_2)
@@ -251,7 +411,7 @@ end
 function access_microstates(paras::Array{Float64,1})
     if length(paras) == 5
         k_on,k_off,v_open,v_close,fold = paras
-        return access_access_microstates(k_on,k_off,v_open,v_close,fold,α,β)
+        return access_microstates(k_on,k_off,v_open,v_close,fold,α,β)
     else
         println("length not match")
     end
@@ -267,7 +427,7 @@ function access_trace_statistics(datapath::String) # access experiment data
             length_file = countlines(f)
             seekstart(f)
             X_temp = [parse(Float64,readline(f)) for i in 1:length_file] # new notation
-            T_temp = [5i for i in 1:size(X_temp)[1]]
+            T_temp = [5(i-1) for i in 1:size(X_temp)[1]]
             push!(X,X_temp[1:481])
             push!(T,T_temp[1:481])
             close(f)
@@ -550,6 +710,8 @@ function evaluate(df,k_on,k_off,v_open,v_close,folds)
         # savefig("D:\\rpa\\figs\\plot_$(k_on)_$(k_off)_$(v_open)_$(v_close)_$(α)_$(β).png")
     end 
 end
+
+
 
 function evaluate(df,k_on,k_off,v_open,v_close,folds,α,β)
     difference = sum(diff(k_on,k_off,v_open,v_close,folds,α,β))
