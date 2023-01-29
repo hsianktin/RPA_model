@@ -1,4 +1,4 @@
-A = [i/10 for i in 5:5:20]
+A = [i/10 for i in 5:1:20]
 include("evaluate_base_diffusion.jl")
 using ProgressMeter
 
@@ -13,7 +13,7 @@ elseif length(ARGS) == 2
     println("simu_label=$simu_label")
 else
     exp_label = "wt_15mM_salt"
-    simu_label = "perturb_diffusion_1240"
+    simu_label = "diffusion_1158"
 end
 
 if exp_label== "general" # self-citing
@@ -29,13 +29,13 @@ else
     end
     # diff contains all the information needed
 
-    analyze(df,"k_on")
-    analyze(df,"k_off")
-    analyze(df,"v_open")
-    analyze(df,"v_close")
+    # analyze(df,"k_on")
+    # analyze(df,"k_off")
+    # analyze(df,"v_open")
+    # analyze(df,"v_close")
     analyze(df,"D1")
-    analyze(df,"α")
-    analyze(df,"β")
+    # analyze(df,"α")
+    # analyze(df,"β")
     # CSV.write("./data_simu/analyze_$(exp_label)_$(simu_label).csv")
     minval,index_min = findmin(df.diff)
     println("minval = $minval")
@@ -52,5 +52,5 @@ else
     write(f,"$minval")
     close(f)
 ## work completed
-CSV.write("./data_simu/diff_$(exp_label)_$simu_label.csv",df)
+    CSV.write("./data_simu/diff_$(exp_label)_$simu_label.csv",df)
 end

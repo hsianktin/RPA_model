@@ -38,8 +38,8 @@ end
 
 Paras = ARGS
 
-l1 = 30
-l2 = 20
+l1 = 30 # length of mode 1 
+l2 = 20 # length of mode 2
 k_on = parse(Float64,Paras[1])
 k_off = parse(Float64,Paras[2])
 v_open = parse(Float64,Paras[3])
@@ -70,7 +70,7 @@ end
 
 
 
-if gaps_type == "none"
+if gaps_type == "none" && !isfile("$simupath/rsa_plot_$saveid.csv")
     paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,state_1,state_2,state)
@@ -107,22 +107,61 @@ if gaps_type == "none"
             writedlm(f,storaged_data_line_2,",")
         close(f)
     end
-    function run_flow(T1,T2,N)
-        i = 1
-        for  i in  0:N
-            if i == 0
-            else
-                # println()
-                simu_flow(T1,T2)
-                # if i < N
-                    # print("\u1b[1F")
-                    # print("\u1b[0K")
-                # end
-            end
+    function simu_flow(T1,T2,id)
+        Time = Array{Float64,1}()
+        push!(Time,0)
+        Length = Array{Float64,1}()
+        state_1 = Array{Float64,1}()
+        state_2 = Array{Float64,1}()
+        # Gaps = Array{Int64,1}[]
+        # i = 1
+        # while i ≤ l1+l2
+        #     push!(Gaps,[L+1-i])
+        #     i += 1
+        # end
+        push!(state_1,0)
+        push!(state_2,0)
+        push!(Length,0)
+        state = Array{Int64,1}()
+        for i in 1:L
+            push!(state,0)
         end
+        simulation(T1,T2,Time,Length,state_1,state_2,state)
+        state_1, _ = modulate_data(state_1, Time)
+        state_2, _ = modulate_data(state_2, Time)
+        # gaps = modulate_data(Gaps,Time,l1,l2)
+        storaged_data_line_1 = [paras;[0.0];state_1]'
+        storaged_data_line_2 = [paras;[1.0];state_2]'
+        f = open("$simupath/rsa_plot_$(saveid)_$(id).csv","a")
+            writedlm(f,storaged_data_line_1,",")
+            writedlm(f,storaged_data_line_2,",")
+        close(f)
+    end
+    function run_flow(T1,T2,N)
+        for i in  0:N
+            simu_flow(T1,T2)
+        end
+        # nested parallel execution by threads is shown to be slower than simple parallel execution
+        # # then we merge all the files
+        # f = open("$simupath/rsa_plot_$saveid.csv","a")
+        # for i in 0:N
+        #     f1 = open("$simupath/rsa_plot_$(saveid)_$(i).csv","r")
+        #     for line in eachline(f1)
+        #         write(f,line)
+        #     end
+        #     close(f1)
+        # end
+        # close(f)
+        # # then we delete all the files
+        # for i in 0:N
+        #     try
+        #     rm("$simupath/rsa_plot_$(saveid)_$(i).csv")
+        #     catch
+        #     end
+        # end
     end
     run_flow(T1,T2,N)
-elseif gaps_type == "cumulative"
+elseif gaps_type == "cumulative" && !isfile("$simupath/rsa_plot_$saveid.csv") 
     paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
@@ -166,20 +205,12 @@ elseif gaps_type == "cumulative"
     end
     function run_flow(T1,T2,N)
         i = 1
-        for  i in  0:N
-            if i == 0
-            else
-                # println()
-                simu_flow(T1,T2)
-                # if i < N
-                    # print("\u1b[1F")
-                    # print("\u1b[0K")
-                # end
-            end
+        for  i in  1:N
+            simu_flow(T1,T2)
         end
     end
     run_flow(T1,T2,N)
-else
+elseif !isfile("$simupath/rsa_plot_$saveid.csv")
     paras = [k_on,k_off,v_open,v_close,fold,L,T1,T2,D1] # assuming D1=D2
     paras = [convert(Float64,x) for x in paras]
     function simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
@@ -233,3 +264,5 @@ else
     end
     run_flow(T1,T2,N)
 end
+
+# do nothing if the file exists

@@ -46,6 +46,13 @@ catch
 end
 
 try
+    mkdir("tmp")
+catch
+    println("tmp/ already exists")
+end
+
+
+try
     mkdir("figs")
     mkdir("figs/landscape")
     mkdir("figs/sources")

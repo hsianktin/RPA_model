@@ -4,7 +4,7 @@ using Statistics
 using CSV
 using Plots
 using DataFrames
-using FFTW
+# using FFTW
 using DelimitedFiles
 using Printf
 simupath = "$(pwd())/data_simu"
@@ -324,6 +324,22 @@ function ensemble_plot(k_on,k_off,v_open,v_close,D1,folds,α,β)
     end
 end
 
+function ensemble_plot(k_on,k_off,v_open,v_close,D1,folds,α,β; simu_label = "", exp_label="")
+    fig=plot(size=(800,1600))
+    for fold in folds
+        conc = convert(Float64,fold)
+        trace_plot!(exp_dict["$conc"][1],exp_dict["$conc"][2])
+    end
+    for fold in folds
+        t_X,μ_X,σ_X=access_trace_statistics(k_on,k_off,v_open,v_close,D1,fold,α,β)
+        t_X=[i for i in 1:length(μ_X)]
+        temp_df = DataFrame(time=t_X,extension=μ_X,std=σ_X)
+        CSV.write("./figs/plot_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
+        label = @sprintf("k_on=%.1E,k_off=%.1E,v_open=%.1E,v_close=%.1E,D1=%.1E,α=%.2f,β=%.2f",k_on,k_off,v_open,v_close,D1,α,β)
+        plot!(t_X,μ_X,line=:dash,lw=5,label = label)
+    end
+end
+
 function ensemble_plot(k_on,k_off,v_open,v_close,D1,simu_folds,exp_folds,α,β,exp_label,simu_label)
     fig=plot(size=(800,1600))
     for fold in exp_folds
@@ -341,7 +357,7 @@ function ensemble_plot(k_on,k_off,v_open,v_close,D1,simu_folds,exp_folds,α,β,e
 end
 
 function microstates_plot(k_on,k_off,v_open,v_close,D1,folds)
-    plot_array = Any[] # can type this more strictly
+    # plot_array = Any[] # can type this more strictly
     for fold in folds
         t_X,μ_1,μ_2,σ_1,σ_2 = access_microstates(k_on,k_off,v_open,v_close,D1,fold)
         label = @sprintf("fold = %.1f",fold)
@@ -349,14 +365,14 @@ function microstates_plot(k_on,k_off,v_open,v_close,D1,folds)
         CSV.write("./figs/microstates_$(exp_label)_$(simu_label)_$fold.csv",temp_df)
         # fig = plot()
         # plot!(t_X,μ_2,lw=5,ribbon=σ_2,fillalpha=0.2,legend=false)
-        push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",labels=["30nt-mode","20nt-mode"])) # make a plot and add it to the plot_array
+        # push!(plot_array,plot(t_X,[μ_1,μ_2],lw=5,ribbon=[σ_1,σ_2],fillalpha=0.2,title="$(label)",labels=["30nt-mode","20nt-mode"])) # make a plot and add it to the plot_array
     end
-    if length(folds)==5
-    plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
-    elseif length(folds)==6
-        plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
-    end
-    savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
+    # if length(folds)==5
+    # plot(plot_array...,layout=@layout([a;b;c;d;e]),size=(800,800))
+    # elseif length(folds)==6
+    #     plot(plot_array...,layout=@layout([a;b;c;d;e;f]),size=(800,800))
+    # end
+    # savefig("./figs/microstates_$(exp_label)_$(simu_label).png")
 end
 
 function microstates_plot(k_on,k_off,v_open,v_close,D1,folds,exp_label,simu_label)
@@ -468,7 +484,7 @@ end
 function evaluate(df,k_on,k_off,v_open,v_close,D1,folds)
     # Main function, build the dataframe storing the relation between parameters and loss functions
     for α in A
-        B = [i*α/5 for i in 5:10]
+        B = [i*α/5 for i in 5:0.5:10]
         for β in B
         # β = 2*α
             difference = sum(diff(k_on,k_off,v_open,v_close,D1,folds,α,β))
@@ -491,7 +507,7 @@ function analyze(df,para)
         temp_df = df[df[:,para].==x,:]
         push!(Y,minimum(temp_df.diff))
     end
-    plot(X,Y,line=:dash,lw=5,xlabel=para,ylabel="min_diff")
+    plot(X,Y,seriestype=:scatter,xlabel=para,ylabel="loss",title="loss-$(para) $(exp_label) $(simu_label)")
     if minimum(X) > 0
         if para !="b"
             xaxis!(:log)
@@ -499,6 +515,25 @@ function analyze(df,para)
     end
     temp_df = DataFrame(para=X, error=Y)
     CSV.write("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
-    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).svg")
+    @show "saving landscape at $figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).png"
+    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).png")
 end
-
+function analyze(df,para,exp_label,simu_label)
+    # plot and analyzing function, depedence on a single parameter
+    X = sort(unique(df[:,para]))
+    Y = Array{Float64,1}()
+    for x in X
+        temp_df = df[df[:,para].==x,:]
+        push!(Y,minimum(temp_df.diff))
+    end
+    plot(X,Y,seriestype=:scatter,xlabel=para,ylabel="loss",title="loss-$(para) $(exp_label) $(simu_label)")
+    if minimum(X) > 0
+        if para !="b"
+            xaxis!(:log)
+        end
+    end
+    temp_df = DataFrame(para=X, error=Y)
+    CSV.write("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label).csv",temp_df)
+    @info "saving landscape at $figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).png"
+    savefig("$figpath/landscape/landscape_$(para)_$(exp_label)_$(simu_label).png")
+end

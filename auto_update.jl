@@ -20,7 +20,7 @@ simupath = "$(pwd())/data_simu"
 if length(ARGS) == 1
     exp_label = ARGS[1]
 else
-    exp_label="wt_150mM_salt"
+    exp_label="wt_15mM_salt"
 end
 para_df = CSV.read("figs/sources/ini_para.csv",DataFrame)
 
@@ -92,16 +92,33 @@ function simu_paras(p₀,it) # update the simulation parameters
 end
 
 print("parameters initialized.\n")
+
+function get_paras(it)
+    k_on, k_off, v_open, v_close, α, β, loss = CSV.read("figs/sources/result_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)[1,:]
+    return [k_on,k_off,v_open,v_close]
+end
+## try to resume from previous fit
+function get_current_it()
+    it = 15
+    while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv") || it == 0
+        it -=1
+    end
+    return it
+end
+it = get_current_it()
 # iteration
 while it < 15
-    if it > 0
-        pₙ = []
-        for para in paras_names
-            landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
-            p,i=findmin(landscape.error)
-            push!(pₙ,landscape.para[i])
+    # resume previous fitting
+    if it > 0 && length(P) < it 
+        for j ∈ 1:it-1
+            pₙ = get_paras(it)
+            push!(P,pₙ)
+            push!(para_df,pₙ)
         end
-        if pₙ == P[it]
+    end
+    if it > 0
+        pₙ = get_paras(it)
+        if pₙ == P[it] # P[it] is the previous fitting result
             println("optimization completed.")
             break
         else
@@ -117,7 +134,7 @@ while it < 15
     Ls = [L]
     T1 = 1800.0
     T2 = 600.0
-    N = 50
+    N = 100
     cmds = Array{Cmd,1}()
     count = 0
     println(k_ons)
@@ -204,15 +221,12 @@ while it < 15
         catch
         end
     end
-    run(`julia evaluate.jl $exp_label $(simu_label)_$(it)`)
+    run(`julia fit_base.jl $exp_label $(simu_label)_$(it) $(T1+T2)`)
     @show para_df
 end
 
 ## final stage
-it = 15
-while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv")
-    global it -=1
-end
+it = get_current_it()
 p₁ = []
 for para in paras_names
     @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
@@ -232,7 +246,7 @@ folds = [0,1,4,10,25,50]
 Ls = [L]
 T1 = 1800.0
 T2 = 600.0
-N = 100
+N = 50
 n = ceil(Int,N/10)
 gaps_type = "exact"
 cmds = Array{Cmd,1}()
