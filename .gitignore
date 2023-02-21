@@ -6,3 +6,5 @@ data_simu/
 *.xdv
 *.gz
 *.pdf
+# ignore all .md files except README.md
+!README.md
