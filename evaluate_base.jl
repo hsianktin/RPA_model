@@ -22,6 +22,9 @@ state_1s = Array{Float64,1}[]
 state_2s = Array{Float64,1}[]
 # X_inis = Array{Float64,1}() # experimental values of unprocessed norms
 # D_inis = Array{Float64,1}()
+intensity_weight = 1
+
+include("intensity_utils.jl")
 
 function dbpath(exp_label,simu_label)
     path = "$simupath/rsa_plot_$(exp_label)_$(simu_label).csv"
@@ -195,7 +198,7 @@ function trace_statistics(state_1_collection,state_2_collection,α,β) # convert
         sum = α*μ_1 + β*μ_2 + (1-μ_1-μ_2)
         return sum
     end
-    μ_X = [α*μ_state_1[i] + β*μ_state_2[i] + (1-μ_state_1[i]-μ_state_2[i]) for i in 1:length(μ_state_1)]
+    μ_X = [α*μ_state_1[i] + β*μ_state_2[i] + (1-μ_state_1[i]-μ_state_2[i]) for i in eachindex(μ_state_1)]
     μ_X = μ_X./norm(μ_state_1,μ_state_2,α,β)
     σ_X = ((α.*σ_state_1).+(β.*σ_state_2))./norm(μ_state_1,μ_state_2,α,β)
     return (time_course,μ_X,σ_X)
@@ -237,6 +240,14 @@ function access_microstates(k_on,k_off,v_open,v_close,fold)
     state_1_collection = DATA[1]
     state_2_collection = DATA[2]
     return microstates(state_1_collection,state_2_collection)
+end
+
+function access_intensity_trace(k_on,k_off,v_open,v_close,fold)
+    time,μ_state_1,μ_state_2,σ_state_1,σ_state_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
+    intensity = μ_state_1 + μ_state_2
+    # normalize intensity when time ∈ (1775,1790)
+    relative_intensity = intensity./mean(intensity[ind for ind in eachindex(time) if time[ind] ∈ (1775,1790)])
+    return relative_intensity, time
 end
 
 function access_trace_statistics(paras::Array{Float64,1})
@@ -482,7 +493,7 @@ function Gaussian_derivative(X)
 end
 
 
-function diff(EX,μ_X,type="squared errors")
+function diff(EX,μ_X; type="squared errors")
     if type == "squared errors"
         difference = 0.0
         for j in 1200:2400
@@ -521,16 +532,23 @@ function diff(k_on,k_off,v_open,v_close,folds,α,β)
         paras = [k_on,k_off,v_open,v_close,fold,α,β]
         paras = [convert(Float64,x) for x in paras]
         t_X,μ_X,σ_X = access_trace_statistics(paras)
-        if isnan(μ_X[1])
-            push!(Diffs,1.0)
+        t_I,μ_I,σ_I = access_intensity_trace(k_on, k_off, v_open, v_close, fold)
+        if isnan(μ_X[1]) || isnan(μ_I[1])
+            push!(Diffs,100.0)
         else
             entry = exp_dict["$(convert(Float64,fold))"]
-            T,X,D = access_trace_statistics(entry[1])
-            EX = [0.0 for i in 1:length(μ_X)]
-            for i in 1:length(T)
+            T,X,D = access_trace_statistics(entry[1]) # obtaining the experimental trace
+            I, T_I = access_intensity_trace(exp_label, fold)
+            EI = [0.0 for i in 1:length(μ_I)]
+            EX = [0.0 for i in 1:length(μ_X)] # padding the experimental trace
+            # such that the length of the experimental trace is the same as the simulated trace
+            # the simulated trace is sampled with dt = 1s, while the experimental trace is sampled with dt = 5s
+            # The code works only if the experimental trace is sampled at a larger time interval than the simulated trace
+            for i in eachindex(T)
                 EX[maximum([ceil(Int,T[i]),1]):end].=X[i]
+                EI[maximum([ceil(Int,T_I[i]),1]):end].+=I[i]
             end
-            push!(Diffs,Weight[i]*diff(EX,μ_X,"derivatives"))
+            push!(Diffs,Weight[i]*(diff(EX,μ_X;type = "squared errors") + intensity_weight * diff(EI,μ_I;type = "squared errors")))
         end
     end
     return Diffs
