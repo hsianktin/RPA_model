@@ -1,7 +1,5 @@
 # estimate the chemical constants based on fitted parameters
 using DataFrames,CSV
-using Pkg
-Pkg.add("Unitful")
 using Unitful
 
 
