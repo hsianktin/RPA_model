@@ -25,6 +25,9 @@ if exp_label== "general" # self-citing
 else
     initialize(exp_label,simu_label)
     length_of_paras = length(index_p.k_on)
+    # headless plot mode for server
+    ENV["GKSwstype"] = "100"
+
     @showprogress 1 "analyzing $exp_label..." for i in 1:length_of_paras
         local k_on,k_off,v_open,v_close = index_p[i,:]
         evaluate(df,k_on,k_off,v_open,v_close,folds)

@@ -3,11 +3,11 @@ using Distributed
 using DataFrames
 using CSV
 
-addprocs(12) # determined by the number of processors (cores)
+addprocs(32) # determined by the number of processors (cores)
 @everywhere begin
     using ProgressMeter
 end
-print("multi-threading initialized.\n")
+@info "multi-threading initialized."
 function simu_fname(exp_label,simu_label,count)
     return "$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$count.csv"
 end
@@ -30,9 +30,10 @@ gaps_type = "none"
 it = 0
 paras_names = ["k_on","k_off","v_open","v_close"]
 figpath = "./figs"
-requested_df=para_df[[para_df.L[i] == L && para_df.exp_label[i] == exp_label for i in 1:length(para_df.L)],:]
+requested_df=para_df[[para_df.exp_label[i] == exp_label for i in 1:length(para_df.L)],:]
 k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
 
+it_max = 15
 # force resetting k_off
 # k_off = 1e-6
 
@@ -79,19 +80,19 @@ function simu_paras(p₀,it) # update the simulation parameters
         end
     end
     if it < 6
+        global k_ons = unique([modulate(k_on*(10.0^(i))) for i in -1:1:1])
+        global k_offs = unique([modulate(k_off*(10.0^(i))) for i in -1:1:1])
+        global v_opens = unique([modulate(v_open*(10.0^(i))) for i in -1:1:1])
+        global v_closes = unique([modulate(v_close*(10.0^(i))) for i in -1:1:1])
+    else 
         global k_ons = unique([modulate(k_on*(10.0^(i/4))) for i in -1:1:1])
         global k_offs = unique([modulate(k_off*(10.0^(i/4))) for i in -1:1:1])
         global v_opens = unique([modulate(v_open*(10.0^(i/4))) for i in -1:1:1])
         global v_closes = unique([modulate(v_close*(10.0^(i/4))) for i in -1:1:1])
-    else 
-        global k_ons = unique([modulate(k_on*(10.0^(i/8))) for i in -1:1:1])
-        global k_offs = unique([modulate(k_off*(10.0^(i/8))) for i in -1:1:1])
-        global v_opens = unique([modulate(v_open*(10.0^(i/8))) for i in -1:1:1])
-        global v_closes = unique([modulate(v_close*(10.0^(i/8))) for i in -1:1:1])
     end
 end
 
-print("parameters initialized.\n")
+@info "parameters initialized."
 
 function get_paras(it)
     k_on, k_off, v_open, v_close, α, β, loss = CSV.read("figs/sources/result_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)[1,:]
@@ -100,14 +101,20 @@ end
 ## try to resume from previous fit
 function get_current_it()
     it = 15
-    while !isfile("$figpath/sources/landscape_$(paras_names[1])_$(exp_label)_$(simu_label)_$(it).csv") || it == 0
+    while !isfile("$figpath/sources/plot_df_$(simu_label)_$(it)_$(exp_label).csv") && it > 0
         it -=1
     end
     return it
 end
 it = get_current_it()
+if it > 0
+    @info "resuming from iteration $(it)"
+else 
+    @info "starting from scratch"
+    it = 0
+end
 # iteration
-while it < 15
+while it < it_max
     # resume previous fitting
     if it > 0 && length(P) < it 
         for j ∈ 1:it-1
@@ -137,10 +144,10 @@ while it < 15
     N = 100
     cmds = Array{Cmd,1}()
     count = 0
-    println(k_ons)
-    println(k_offs)
-    println(v_opens)
-    println(v_closes)
+    @info "k_ons" (k_ons)
+    @info "k_offs" (k_offs)
+    @info "v_opens" (v_opens)
+    @info "v_closes" (v_closes)
     # while count < 200
         for k_on in k_ons
             for k_off in k_offs
@@ -166,12 +173,15 @@ while it < 15
     # end
     # println("command length: $(length(cmds))")
     # use distributed storage for parallel execution.
-    @showprogress 1 "running for iteration $(it) " pmap(run,cmds)
+    progress_pmap(run,cmds; 
+        progress=Progress(length(cmds),desc="running for iteration $(it)", 
+                showspeed=true, color=:white)
+                )
     try # clear old data
         rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it).csv")
-        println("old data deleted")
+        @info "old data deleted and removed"
     catch
-        println("no old data detected")
+        @info "no old data detected, saving..."
     end
     for i in 1:count
         try
@@ -222,23 +232,18 @@ while it < 15
         end
     end
     run(`julia fit_base.jl $exp_label $(simu_label)_$(it) $(T1+T2)`)
-    @show para_df
+    @info "updated parameters in iteration $it" para_df
 end
 
 ## final stage
 it = get_current_it()
-p₁ = []
-for para in paras_names
-    @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)
-    p,i=findmin(landscape.error)
-    push!(p₁,landscape.para[i])
-end
+p₁ = get_paras(it)
 function final_paras(p₀) # update the simulation parameters
     k_on,k_off,v_open,v_close = p₀
-    global k_ons = unique([k_on for i in -1:1:1])
-    global k_offs = unique([k_off for i in -1:1:1])
-    global v_opens = unique([v_open for i in -1:1:1])
-    global v_closes = unique([v_close for i in -1:1:1])
+    global k_ons = unique([k_on for i in 1:1:1])
+    global k_offs = unique([k_off for i in 1:1:1])
+    global v_opens = unique([v_open for i in 1:1:1])
+    global v_closes = unique([v_close for i in 1:1:1])
 end
 final_paras(p₁)
 simu_label="fitted"
@@ -248,9 +253,10 @@ T1 = 1800.0
 T2 = 600.0
 N = 50
 n = ceil(Int,N/10)
-gaps_type = "exact"
+gaps_type = "none"
 cmds = Array{Cmd,1}()
 count = 0
+
     while count < 10*length(folds)
         for k_on in k_ons
             for k_off in k_offs
@@ -282,7 +288,10 @@ count = 0
     catch
         println("no previous results")
     end
-    @showprogress 1 "running for fitted values " pmap(run,cmds)
+    progress_pmap(run,cmds; 
+        progress=Progress(length(cmds),desc="running for fitted parameters", 
+                showspeed=true, color=:white)
+                )
     for i in 1:count
         try
         open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv","r") do input
@@ -307,30 +316,30 @@ count = 0
         catch
         end
     end
-    for i in 1:count
-        try
-            open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
-                open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
-                    n = countlines(input)
-                    record = 0
-                    seekstart(input)
-                    for k in 1:n
-                        line = readline(input)
-                        println(output,line)
-                        record = record + 1
-                    end
-                    # println(record)
-                end
-            end
-        catch
-        end
-    end
-    for i in 1:count
-        try
-            rm("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv")
-        catch
-        end
-    end
+    # for i in 1:count
+    #     try
+    #         open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
+    #             open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
+    #                 n = countlines(input)
+    #                 record = 0
+    #                 seekstart(input)
+    #                 for k in 1:n
+    #                     line = readline(input)
+    #                     println(output,line)
+    #                     record = record + 1
+    #                 end
+    #                 # println(record)
+    #             end
+    #         end
+    #     catch
+    #     end
+    # end
+    # for i in 1:count
+    #     try
+    #         rm("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv")
+    #     catch
+    #     end
+    # end
     run(`julia evaluate.jl $exp_label $(simu_label)`)
-    run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
+    # run(`julia exact_gap_analysis.jl $(exp_label) $(simu_label)`)
 

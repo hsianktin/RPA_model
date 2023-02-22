@@ -1,4 +1,7 @@
-# Basis for evaluation related functions. Load necessary data and provide a set of functions to evaluate the performance of the parameters.
+# the original evaluation script is considerably slow,
+# this script is to speed up the evaluation process by
+# using the split-apply-combine strategy and multi-threads parallelization
+
 using Statistics
 using Pipe
 using CSV
@@ -8,12 +11,12 @@ using LinearAlgebra
 using DelimitedFiles
 using Printf
 ∑(x) = sum(x)
-
+include("evaluate_base.jl")
 #### for test purpose
 simupath = "$(pwd())/data_simu"
-dbpath = raw"C:\Users\Lixti\Downloads\rsa_plot_wt_15mM_salt_update_1.csv"
+# data_path = raw""
 T = 2400
-exp_label = "wt_150mM_salt"
+exp_label = "wt_15mM_salt"
 simu_label = "update_1"
 ####
 if length(ARGS) >= 3
@@ -90,61 +93,32 @@ function load_simu_df(dbpath,T)
             compact_para_headers
         )
     return microstates_stats
+    # the output is a DataFrame with the following columns:
+    # k_on, k_off, v_open, v_close, fold, L, T1, T2, N, time, f̄₃₀, Δf₃₀, f̄₂₀, Δf₂₀
 end
 
-function load_exp_df(folds, exp_dict)
-    exp_df = DataFrame(fold = Float64[], ℓ̄ = Float64[], Δℓ̄ = Float64[], time = Float64[])
+function load_exp_df(folds, exp_dict,T̄)
+    exp_df = DataFrame(
+        fold = Float64[], 
+        ℓ̄ = Float64[], 
+        Δℓ̄ = Float64[], 
+        Ī = Float64[], 
+        time = Float64[]
+        )
     for fold ∈ folds
         conc = convert(Float64, fold)
         T, L , ΔL = access_trace_statistics(exp_dict["$conc"][1])
-        for i ∈ 1:length(T)
-            push!(exp_df, [fold, L[i], ΔL[i], T[i]])
+        I, T_I = access_intensity_trace(exp_label, fold)
+        for i ∈ eachindex(T)
+            if T[i] ≤ T̄
+                push!(exp_df, [fold, L[i], ΔL[i], I[i] , T[i]])
+            end
         end
     end
     return exp_df
 end
 
 
-function access_trace_statistics(datapath::String) # access experiment data
-    readdir(datapath)
-    X=Array{Float64,1}[]
-    T=Array{Float64,1}[]
-    for fname in readdir(datapath)
-        # if length(fname) == 12 
-            f = open("$datapath/$fname", "r")
-            length_file = countlines(f)
-            seekstart(f)
-            X_temp = [parse(Float64,readline(f)) for i in 1:length_file] # new notation
-            T_temp = [5(i-1) for i in 1:size(X_temp)[1]]
-            push!(X,X_temp[1:481])
-            push!(T,T_temp[1:481])
-            close(f)
-        # end
-    end
-    ## We should notice that different trace represents DNA of different lengths.
-    # X_norm = mean([mean(x[355,358]) for x in X])
-    # D_norm = mean([std(x[355:358]) for x in X])
-    # push!(X_inis,X_norm)
-    # push!(D_inis,D_norm)
-    X_backup = X
-    X = [x/mean([x[355],x[358]]) for x in X]
-    time_course = T[1]
-    μ_X = Array{Float64,1}()
-    σ_X = Array{Float64,1}()
-    for i in 1:size(time_course)[1]
-        X_temp = [x[i] for x in X]
-        push!(μ_X,mean(X_temp))
-        push!(σ_X,std(X_temp))
-    end
-    # μ_X = μ_X
-    # σ_X = σ_X
-    # open("$datapath/$fig_label.csv","w") do io
-    #     writedlm(io,[time_course μ_X σ_X])
-    # end
-    X = X_backup
-    # plot!(time_course,μ_X,ribbon=σ_X,fillalpha=.1,lw=5,label=fig_label) 
-    return (time_course,μ_X,σ_X)
-end
 
 function initialize(exp_label,dbpath,T)
     global exp_dict = Dict{String,Array{String,1}}()
@@ -183,12 +157,12 @@ function initialize(exp_label,dbpath,T)
     exp_dict_inject.(exp_data_base)
     # dbpath = dbpath(exp_label,simu_label)
     simu_df = load_simu_df(dbpath,T)
-    exp_df = load_exp_df(folds, exp_dict)
+    exp_df = load_exp_df(folds, exp_dict, T)
     return simu_df, exp_df
 end
 
-function fit(folds,f₃₀,f₂₀,ℓ,times)
-    local df = DataFrame(fold=folds, f₃₀=f₃₀, f₂₀=f₂₀, ℓ=ℓ, time=times)
+function fit(folds,f₃₀,f₂₀,ℓ,I,times)
+    local df = DataFrame(fold=folds, f₃₀=f₃₀, f₂₀=f₂₀, ℓ=ℓ, I = I,  time=times)
     loss_df = DataFrame(α=Float64[], β=Float64[], difference=Float64[])
     A = [i for i in 0.5:0.1:4]
     for α in A
@@ -200,12 +174,15 @@ function fit(folds,f₃₀,f₂₀,ℓ,times)
                 df_slice = @pipe df |>
                     filter(row -> row.fold == fold && row.time ≥ 1200, _)
                 y = df_slice.ℓ
+                i = df_slice.I
                 f₃₀ = df_slice.f₃₀
                 f₂₀ = df_slice.f₂₀
                 t = df_slice.time
                 ŷ = (α*f₃₀)+(β*f₂₀)+(-f₃₀-f₂₀.+1) |> (x -> x./mean([x[convert(Int,1775/5+1-1200/5)],x[convert(Int,1790/5+1-1200/5)]]))
-                ε = y-ŷ
-                difference += norm(ε)^2 + norm(ε[t .≥ 2000])^2
+                Î = f₃₀ + f₂₀ |> (x -> x./mean([x[convert(Int,1775/5+1-1200/5)],x[convert(Int,1790/5+1-1200/5)]]))
+                εₗ = y-ŷ
+                εᵢ = i-Î
+                difference += norm(εₗ)^2 + norm(εₗ[t .≥ 2000])^2 + (norm(εᵢ)^2 + norm(εᵢ[t .≥ 2000])^2) * intensity_weight^2
             end
             push!(loss_df,[α,β,difference])
             # println([k_on,k_off,v_open,v_close,α,β,difference])
@@ -221,13 +198,16 @@ end
 function analyze_df(microstates_stats, exp_df)
     times = exp_df.time
     simu_df = filter(row -> row.time ∈ times, microstates_stats)
+    # by doing so, the simu_df are sampled at the same time points as the exp_df
+    
     # require that the microstates_stats are well sorted
     ℓ = exp_df.ℓ̄
+    I = exp_df.Ī
     para_headers = [:k_on,:k_off,:v_open,:v_close,:L,:T1,:T2,:N]
     combine_df = @pipe simu_df |>
         groupby(_, para_headers) |>
         combine(_,
-            [:fold, :f̄₃₀, :f̄₂₀] => ((x,y,z) -> (α=fit(x,y,z,ℓ,times)[1],β=fit(x,y,z,ℓ,times)[2],loss=fit(x,y,z,ℓ,times)[3])) => AsTable,
+            [:fold, :f̄₃₀, :f̄₂₀] => ((x,y,z) -> (α=fit(x,y,z,ℓ,I,times)[1],β=fit(x,y,z,ℓ,I,times)[2],loss=fit(x,y,z,ℓ,I,times)[3])) => AsTable,
         )
     result = @pipe combine_df |>
             sort(_,:loss) |>
@@ -256,8 +236,8 @@ function visualize(result,simu_df)
     )
     CSV.write("figs/sources/plot_df_$(simu_label)_$(exp_label).csv",plot_df)
 end
-dbpath = get_dbpath(exp_label,simu_label)
-@time simu_df, exp_df = initialize(exp_label,dbpath,T);
-@time result = analyze_df(simu_df, exp_df) |> DataFrame
+data_path = get_dbpath(exp_label,simu_label)
+simu_df, exp_df = initialize(exp_label,data_path,T);
+result = analyze_df(simu_df, exp_df) |> DataFrame
 CSV.write("figs/sources/result_$(exp_label)_$(simu_label).csv",result)
 visualize(result,simu_df)

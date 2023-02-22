@@ -22,7 +22,7 @@ state_1s = Array{Float64,1}[]
 state_2s = Array{Float64,1}[]
 # X_inis = Array{Float64,1}() # experimental values of unprocessed norms
 # D_inis = Array{Float64,1}()
-intensity_weight = 1
+intensity_weight = 0.01
 
 include("intensity_utils.jl")
 
@@ -246,7 +246,7 @@ function access_intensity_trace(k_on,k_off,v_open,v_close,fold)
     time,μ_state_1,μ_state_2,σ_state_1,σ_state_2 = access_microstates(k_on,k_off,v_open,v_close,fold)
     intensity = μ_state_1 + μ_state_2
     # normalize intensity when time ∈ (1775,1790)
-    relative_intensity = intensity./mean(intensity[ind for ind in eachindex(time) if time[ind] ∈ (1775,1790)])
+    relative_intensity = intensity./mean(intensity[1775:1790])
     return relative_intensity, time
 end
 
@@ -532,7 +532,7 @@ function diff(k_on,k_off,v_open,v_close,folds,α,β)
         paras = [k_on,k_off,v_open,v_close,fold,α,β]
         paras = [convert(Float64,x) for x in paras]
         t_X,μ_X,σ_X = access_trace_statistics(paras)
-        t_I,μ_I,σ_I = access_intensity_trace(k_on, k_off, v_open, v_close, fold)
+        t_I,μ_I = access_intensity_trace(k_on, k_off, v_open, v_close, fold)
         if isnan(μ_X[1]) || isnan(μ_I[1])
             push!(Diffs,100.0)
         else
