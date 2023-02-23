@@ -36,19 +36,19 @@ k_on,k_off,k_open,k_close,α,β,L,exp_label = requested_df[1,:]
 it_max = 15
 # force resetting k_off
 # k_off = 1e-6
-
-p₀=[k_on,k_off,k_open,k_close]
+current_loss = NaN
+p₀=[k_on,k_off,k_open,k_close,current_loss]
 # for para in paras_names
 #     @show landscape=CSV.read("$figpath/sources/landscape_$(para)_$(exp_label)_$(init_label).csv",DataFrame)
 #     p,i=findmin(landscape.error)
 #     push!(p₀,landscape.para[i])
 # end
 P = []
-para_df = DataFrame(k_on=Float64[],k_off=Float64[],v_open=Float64[],v_close=Float64[])
+para_df = DataFrame(k_on=Float64[],k_off=Float64[],v_open=Float64[],v_close=Float64[], loss=Float64[])
 push!(para_df,p₀)
 push!(P,p₀)
 function simu_paras(p₀) # update the simulation parameters
-    k_on,k_off,v_open,v_close = p₀
+    k_on,k_off,v_open,v_close,loss = p₀
     lower_limit = 1.0e-6
     upper_limit = 1e1
     function modulate(v) # fall between limits
@@ -67,7 +67,7 @@ function simu_paras(p₀) # update the simulation parameters
 end
 
 function simu_paras(p₀,it) # update the simulation parameters
-    k_on,k_off,v_open,v_close = p₀
+    k_on,k_off,v_open,v_close,loss = p₀
     lower_limit = 1.0e-6
     upper_limit = 1e1
     function modulate(v) # fall between limits
@@ -96,7 +96,7 @@ end
 
 function get_paras(it)
     k_on, k_off, v_open, v_close, α, β, loss = CSV.read("figs/sources/result_$(exp_label)_$(simu_label)_$(it).csv",DataFrame)[1,:]
-    return [k_on,k_off,v_open,v_close]
+    return [k_on,k_off,v_open,v_close,loss]
 end
 ## try to resume from previous fit
 function get_current_it()
@@ -239,7 +239,7 @@ end
 it = get_current_it()
 p₁ = get_paras(it)
 function final_paras(p₀) # update the simulation parameters
-    k_on,k_off,v_open,v_close = p₀
+    k_on,k_off,v_open,v_close,loss = p₀
     global k_ons = unique([k_on for i in 1:1:1])
     global k_offs = unique([k_off for i in 1:1:1])
     global v_opens = unique([v_open for i in 1:1:1])
