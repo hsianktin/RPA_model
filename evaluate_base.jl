@@ -22,7 +22,7 @@ state_1s = Array{Float64,1}[]
 state_2s = Array{Float64,1}[]
 # X_inis = Array{Float64,1}() # experimental values of unprocessed norms
 # D_inis = Array{Float64,1}()
-intensity_weight = 0.1
+intensity_weight = 0
 
 include("intensity_utils.jl")
 
