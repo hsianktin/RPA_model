@@ -1,8 +1,8 @@
 push!(LOAD_PATH,pwd())
 using TonksGaswithReactionGaps
 simupath = "$(pwd())/data_simu"
-function modulate_data(EX,ET) # record the state of data every second.
-    Time = [i for i in 0:1:ceil(Int,T1+T2)]
+function modulate_data(EX,ET;dt = 1) # record the state of data every second.
+    Time = [i for i in 0:dt:ceil(Int,T1+T2)]
     Ext = [0.0 for i in Time]
     for i in 1:length(EX)
         t = ceil(Int,ET[i])
@@ -55,6 +55,7 @@ if exp_label == "''"
 end
 simu_label = Paras[11]
 gaps_type = Paras[12]
+
 saveid = "$(exp_label)_$(simu_label)"
 if exp_label == "wt_15mM_salt_with_diffusion"
     D1 = 3.86
@@ -68,6 +69,11 @@ else
     D1 = D2 = 0.0
 end
 
+if length(Paras) == 14
+    dt = parse(Float64,Paras[14])
+else
+    dt = 1.0
+end
 
 
 if gaps_type == "none" && !isfile("$simupath/rsa_plot_$saveid.csv")
@@ -97,8 +103,8 @@ if gaps_type == "none" && !isfile("$simupath/rsa_plot_$saveid.csv")
             push!(state,0)
         end
         simulation(T1,T2,Time,Length,state_1,state_2,state)
-        state_1, _ = modulate_data(state_1, Time)
-        state_2, _ = modulate_data(state_2, Time)
+        state_1, _ = modulate_data(state_1, Time; dt = dt)
+        state_2, _ = modulate_data(state_2, Time; dt = dt)
         # gaps = modulate_data(Gaps,Time,l1,l2)
         storaged_data_line_1 = [paras;[0.0];state_1]'
         storaged_data_line_2 = [paras;[1.0];state_2]'
@@ -127,8 +133,8 @@ if gaps_type == "none" && !isfile("$simupath/rsa_plot_$saveid.csv")
             push!(state,0)
         end
         simulation(T1,T2,Time,Length,state_1,state_2,state)
-        state_1, _ = modulate_data(state_1, Time)
-        state_2, _ = modulate_data(state_2, Time)
+        state_1, _ = modulate_data(state_1, Time; dt = dt)
+        state_2, _ = modulate_data(state_2, Time; dt = dt)
         # gaps = modulate_data(Gaps,Time,l1,l2)
         storaged_data_line_1 = [paras;[0.0];state_1]'
         storaged_data_line_2 = [paras;[1.0];state_2]'
@@ -188,8 +194,8 @@ elseif gaps_type == "cumulative" && !isfile("$simupath/rsa_plot_$saveid.csv")
             push!(state,0)
         end
         simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
-        state_1, _ = modulate_data(state_1, Time)
-        state_2, _ = modulate_data(state_2, Time)
+        state_1, _ = modulate_data(state_1, Time; dt = dt)
+        state_2, _ = modulate_data(state_2, Time; dt = dt)
         gaps = modulate_data(Gaps,Time,l1,l2)
         storaged_data_line_1 = [paras;[0.0];state_1]'
         storaged_data_line_2 = [paras;[1.0];state_2]'
@@ -233,8 +239,8 @@ elseif !isfile("$simupath/rsa_plot_$saveid.csv")
             push!(state,0)
         end
         simulation(T1,T2,Time,Length,Gaps,state_1,state_2,state)
-        state_1, _ = modulate_data(state_1, Time)
-        state_2, _ = modulate_data(state_2, Time)
+        state_1, _ = modulate_data(state_1, Time; dt = dt)
+        state_2, _ = modulate_data(state_2, Time; dt = dt)
         gaps = modulate_data(Gaps,Time,l1,l2,gaps_type)
         storaged_data_line_1 = [paras;[0.0];state_1]'
         storaged_data_line_2 = [paras;[1.0];state_2]'
