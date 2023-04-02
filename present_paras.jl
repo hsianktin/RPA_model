@@ -1,3 +1,7 @@
+### After fitting the parameters,
+### this script is used to generate the simulation data 
+##### using the fitted parameters with larger sample sizes
+
 # dynamics of 20nt-only mode control
 # must be run after figs/para_fitted.csv is created
 print("initializing...\n")

@@ -21,7 +21,7 @@ simupath = "$(pwd())/data_simu"
 if length(ARGS) == 1
     exp_label = ARGS[1]
 else
-    exp_label="wt_15mM_salt"
+    exp_label=""
 end
 
 simu_label = "landscape"
@@ -77,47 +77,71 @@ rm("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv")
 catch
 @info "no old data detected, saving..."
 end
+
+# first print header to rsa_plot_$(exp_label)_$(simu_label).csv
+cols = [
+    "k_on",
+    "k_off",
+    "v_open",
+    "v_close",
+    "fold",
+    "L",
+    "T1",
+    "T2",
+    "D1",
+    "Id",
+]
+
+dt = 5
+ts = [string(i) for i in 0:dt:2400] 
+cols = [cols; ts]
+# concatenate the columns by ","
+header = join(cols, ",")
+# write the header to the file
+open("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv","a") do output
+    println(output,header)
+end
 for i in 1:count
-try
-open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv","r") do input
-    open("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv","a") do output
-        n = countlines(input)
-        record = 0
-        seekstart(input)
-        for k in 1:n
-            line = readline(input)
-            println(output,line)
-            record = record + 1
-        end
-        # println(record)
-    end
-end
-catch
-end
-end
-for i in 1:count
-try
-rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv")
-catch
-end
-end
-for i in 1:count
-try
-    open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
-        open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
-            n = countlines(input)
-            record = 0
-            seekstart(input)
-            for k in 1:n
-                line = readline(input)
-                println(output,line)
-                record = record + 1
+    try
+        open("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv","r") do input
+            open("$simupath/rsa_plot_$(exp_label)_$(simu_label).csv","a") do output
+                n = countlines(input)
+                record = 0
+                seekstart(input)
+                for k in 1:n
+                    line = readline(input)
+                    println(output,line)
+                    record = record + 1
+                end
+                # println(record)
             end
-            # println(record)
         end
+    catch
     end
-catch
 end
+for i in 1:count
+    try
+        rm("$simupath/rsa_plot_$(exp_label)_$(simu_label)_$i.csv")
+    catch
+    end
+end
+for i in 1:count
+    try
+        open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label)_$i.csv","r") do input
+            open("$simupath/rsa_$(gaps_type)_gaps_$(exp_label)_$(simu_label).csv","a") do output
+                n = countlines(input)
+                record = 0
+                seekstart(input)
+                for k in 1:n
+                    line = readline(input)
+                    println(output,line)
+                    record = record + 1
+                end
+                # println(record)
+            end
+        end
+    catch
+    end
 end
 for i in 1:count
 try
