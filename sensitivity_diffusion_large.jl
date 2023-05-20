@@ -4,7 +4,7 @@ using Distributed
 using DataFrames
 using CSV
 
-addprocs([("ryzen",15)]) # determined by the number of processors (cores)
+# addprocs(nprocs()) # determined by the number of processors (cores)
 @everywhere begin
     using ProgressMeter
 end

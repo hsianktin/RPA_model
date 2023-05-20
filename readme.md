@@ -1,26 +1,27 @@
 # Dependencies
-This repository is dependent fully on julialang and its ecosystem.
+This repository is dependent fully on `julialang` and its ecosystem.
+Julia Version 1.8.3 is used in the development of this package.
 Modules used
-- [Statistics](https://github.com/JuliaLang/Statistics.jl)
-- Random
-- [CSV](https://github.com/JuliaData/CSV.jl)
-- [Plots](https://doi.org/10.5281/zenodo.4725317)
-- [DataFrames](https://github.com/JuliaData/DataFrames.jl)
-- Printf
-- [ProgressMeter](https://github.com/timholy/ProgressMeter.jl)
-- Distributed
-- DelimitedFiles
+- [CSV](https://github.com/JuliaData/CSV.jl) v0.10.8
+- [Plots](https://doi.org/10.5281/zenodo.4725317) v1.38.0
+- [DataFrames](https://github.com/JuliaData/DataFrames.jl) v1.5.0
+- [ProgressMeter](https://github.com/timholy/ProgressMeter.jl) v1.7.2
+- Pipe v1.3.0
+- Unitful v1.12.2
+- StatsPlots v0.15.5
+- Plotly v0.4.1
 
+For complete dependency, see `Project.toml` and `Manifest.toml`.
 # Initialization
 Make sure you have julialang and relevant packages installed.
 Clone this package, and run `julia initialize.jl` in the command line. This is to precompile the package and generate the folders.
 
 # Experiment Data Preparation
-The functions for reading experiment data are written in [[evaluate_base.jl]] and [[evaluate_base_diffusion.jl]]. 
+The functions for reading experiment data are written in `evaluate_base.jl` and `evaluate_base_diffusion.jl. 
 
 As is mentioned in the paper, we prepare the data by first incubating ssDNA with the RPA for 30 minutes and changed to a higher concentration of RPA later. This is the situation our code is primarily intended to analyze.
 
-Data are stored in stored in the form of csv files. Each csv file consists of a single column of DNA extensions recorded by the ssDNA curtain assay.  The first row is ssDNA extension measured at time=5 seconds after flow. The n-th row is ssDNA extension measured at time $5n$ seconds after flow. 
+Data are stored in the format of csv files. Each csv file consists of a single column of DNA extensions recorded by the ssDNA curtain assay.  The first row is ssDNA extension measured at time=5 seconds after flow. The n-th row is ssDNA extension measured at time $5n$ seconds after flow. 
 
 ```csv
 1.000000000000000000e+00
@@ -55,7 +56,7 @@ The directory tree for the experiment data folder is given as follows.
 
 ```
 
-The mapping from folder name to experiment conditions (experiment labels) is stored as a dictionary in the [[evaluate_base.jl]].
+The mapping from folder name to experiment conditions (experiment labels) is stored as a dictionary in the `evaluate_base.jl`.
 ```julia
     if exp_label == "wt_15mM_salt"
         global exp_data_base=[("wt",0),("wt",1),("wt",4),("wt",10),("wt",25),("wt",50)]
@@ -90,33 +91,36 @@ The mapping from folder name to experiment conditions (experiment labels) is sto
     exp_dict_inject.(exp_data_base)
 ```
 
-# Topology of Codes and Datafiles
-## dependency
-- [[TonksGaswithReactionGaps.jl]] -> [[simu_base.jl]] -> [[auto_update.jl]]/[[sensitivity_length.jl]]/[[sensitivity_diffusion.jl]]/[[sensitivity_parameter.jl]]
-- [[evaluate_base.jl]] -> [[evaluate.jl]]/[[evaluate_sensitivity.jl]]
+# Topology of Codes and Data
+## Dependency
+- `TonksGaswithReactionGaps.jl` -> `simu_base.jl` -> `auto_update.jl`/`sensitivity_length.jl`/`sensitivity_diffusion.jl`/`sensitivity_parameter.jl`
+- `evaluate_base.jl` -> `evaluate.jl`/`evaluate_sensitivity.jl`
 
+A -> B means B depends on A.
 # Basic Usage
-At the root directory, simulation data can be obtained by executing the following command in powershell or bash:
+At the root directory, simulation data can be obtained by executing the following command in command line:
 ```Shell
 julia simu_base.jl $k_on $k_off $v_open $v_close $fold $L $T1 $T2 $N $exp_label $simu_label $gaps_type
 ```
-where `$k_on`, `$k_off`, ..., should be replaced by numerical values. `exp_label` and `simu_label` are strings and concatenated to create a unique identifier for the output. `$gaps_type` can be `exact`, `cumulative` or `none`. It corresponds to different ways of couting the gaps, or not counting them at all.
+where `$k_on`, `$k_off`, ..., should be replaced by numerical values. `exp_label` and `simu_label` are strings and concatenated to create a unique identifier for the output. `$gaps_type` can be `exact`, `cumulative` or `none`. It corresponds to different ways of counting the gaps, or not counting them at all.
 
 All the outputs are stored in the folder `data_simu/`. To generate trace figures, use the following command:
 ```shell
 julia evaluate.jl $exp_label $simu_label
 ```
-This command will combine the simulation and experimentally obtained traces. The code in [[evaluate.jl]] could be tailored to custom needs. Accompanying the figures, the code also generates the data source for the figures.
+This command will combine the simulation and experimentally obtained traces. The code in `evaluate.jl` could be tailored to custom needs. Accompanying the figures, the code also generates the data source for the figures.
 
-To analyze the gap distribution, use [[exact_gap_analysis.jl]] as follows:
+To analyze the gap distribution, use `exact_gap_analysis.jl` as follows:
 ```Shell
 julia exact_gap_analysis.jl $exp_label $simu_label
 ```
 
 # Batch Analysis
-[[auto_update.jl]] is built on top of the basic analysis method, to automatically find an optimal value of parameters. It relies on the file `figs/sources/ini_para.csv` to get the inital parameters.
+`auto_update.jl` is built on top of the basic analysis method, to automatically find an optimal value of parameters. It relies on the file `figs/sources/ini_para.csv` to get the initial parameters.
 
-[[auto_summarize.jl]] summarizes the data generated by [[auto_update.jl]] and the output parameters will be saved in `figs/para_$(simu_label).csv`
-The default `simu_label` for [[auto_summarize.jl]] is `fitted`.
+`auto_summarize.jl` summarizes the data generated by `auto_update.jl` and the output parameters will be saved in `figs/para_$(simu_label).csv`
+The default `simu_label` for `auto_summarize.jl` is `fitted`.
 
-[[sensitivity_parameter.jl]], [[sensitivity_length.jl]], [[sensitivity_diffusion.jl]] detect the local sensitivity of the model at the optimal parameter. In those cases, only one parameter is varied and we inspect the losses as a function of this parameter.
+`sensitivity_parameter.jl`, `sensitivity_length.jl`, `sensitivity_diffusion.jl` detect the local sensitivity of the model at the optimal parameter. In those cases, only one parameter is varied and we inspect the losses as a function of this parameter.
+
+`chemical_constants.jl` estimates some chemical constants based on fitted parameters. The output is saved in `figs/sources/kinetics.csv`.
