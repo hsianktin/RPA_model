@@ -100,7 +100,7 @@ At the root directory, simulation data can be obtained by executing the followin
 ```Shell
 julia simu_base.jl $k_on $k_off $v_open $v_close $fold $L $T1 $T2 $N $exp_label $simu_label $gaps_type
 ```
-where `$k_on`, `$k_off`, ..., should be replaced by numerical values. `exp_label` and `simu_label` are strings and concatenated to create a unique identifier for the output. `$gaps_type` can be `exact`, `cumulative` or `none`. It corresponds to different ways of couting the gaps, or not counting them at all.
+where `$k_on`, `$k_off`, ..., should be replaced by numerical values. `exp_label` and `simu_label` are strings and concatenated to create a unique identifier for the output. `$gaps_type` can be `exact`, `cumulative` or `none`. It corresponds to different ways of counting the gaps, or not counting them at all.
 
 All the outputs are stored in the folder `data_simu/`. To generate trace figures, use the following command:
 ```shell
@@ -120,3 +120,18 @@ julia exact_gap_analysis.jl $exp_label $simu_label
 The default `simu_label` for [[auto_summarize.jl]] is `fitted`.
 
 [[sensitivity_parameter.jl]], [[sensitivity_length.jl]], [[sensitivity_diffusion.jl]] detect the local sensitivity of the model at the optimal parameter. In those cases, only one parameter is varied and we inspect the losses as a function of this parameter.
+
+# Publication
+```bibtex
+@article{ding2023ssdna,
+  title={ssDNA accessibility of Rad51 is regulated by orchestrating multiple RPA dynamics},
+  author={Ding, Jiawei and Li, Xiangting and Shen, Jiangchuan and Zhao, Yiling and Zhong, Shuchen and Lai, Luhua and Niu, Hengyao and Qi, Zhi},[^3^][3]
+  journal={Nature Communications},
+  volume={14},
+  number={1},
+  pages={3864},
+  year={2023},
+  doi = {10.1038/s41467-023-39579-y},
+  publisher={Nature Publishing Group}
+}
+```
