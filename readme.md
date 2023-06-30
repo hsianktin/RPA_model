@@ -7,11 +7,17 @@ long single-stranded DNA (ssDNA) molecule, taking into account various
 stochastic processes such as binding, unbinding, mode switching, and
 diffusion.
 
+![Schematic of RPA molecules on ssDNA](./figs/schematics-1.png)
+
 Our model is based on the Tonks-Girardeau gas model, which is a
 well-known model in statistical physics that describes the behavior of
 a one-dimensional gas of hard-core bosons. We have extended this model
 to include the effects of RPA molecules on ssDNA, and have implemented
 it using the Julia programming language.
+
+For a complete description of our model, please refer to our paper 
+or the [simulation_method](simulation_method.pdf).
+
 
 Our simulation results show that our model can accurately capture the
 behavior of RPA molecules on ssDNA, and can provide insights into the
