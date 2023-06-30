@@ -4,10 +4,9 @@ using Distributed
 using DataFrames
 using CSV
 using Printf
-using Random: shuffle
+using Random
 if nprocs() == 1
-    addprocs([("rog-ld03", 24),("ryzen",16)]) # determined by the number of processors (cores)
-    # addprocs(15)
+    addprocs(15)
 end
 @everywhere begin
     using ProgressMeter

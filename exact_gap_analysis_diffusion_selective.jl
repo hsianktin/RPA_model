@@ -1,6 +1,3 @@
-using DataFrames: DataAPI
-using Base: Float64
-using Plots: push!, position
 # Evaluating Gaps...
 # Only suitable in the case where all data come from the same parameters
 # works in the extension with diffusion, it will also record the information of diffusion into the table

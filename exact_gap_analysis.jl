@@ -1,6 +1,3 @@
-using DataFrames: DataAPI
-using Base: Float64
-using Plots: push!, position
 # Evaluating Gaps...
 # Only suitable in the case where all data come from the same parameters
 using Statistics

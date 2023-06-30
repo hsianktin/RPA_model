@@ -1,9 +1,0 @@
-using Distributed
-addprocs(8)
-N = 8
-@everywhere begin
-    using ProgressMeter
-end
-cmds = []
-for i in 1:N
-    cmd = `julia fret_stats_refined_estimate.jl`

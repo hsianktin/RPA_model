@@ -2,7 +2,8 @@
 # create figs/para_fitted.csv
 print("initializing...\n")
 using DataFrames
-using CSV,DataFrames
+using CSV
+using DataFrames
 using ProgressMeter
 function simu_fname(exp_label,simu_label,count)
     return "$simupath/rsa_plot_$(exp_label)_$(simu_label)_$(it)_$count.csv"

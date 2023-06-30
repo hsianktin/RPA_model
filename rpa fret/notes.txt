@@ -1,5 +1,0 @@
-Low fret signal is interpreted as hairpin opened.
-When low fret signal dwells, RPA is considered to diffuse freely in the opened hairpin region.
-Once the hairpin closes, low fret signals disappear.
-Dwell time of low fret signals can be found by simulation.
-The parameter that generates most "similar" results, as measured by [relative entropy between distributions], is adopted as the true data.
