@@ -8,3 +8,20 @@ data_simu/
 *.pdf
 # ignore all .md files except README.md
 !README.md
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.xdv
+*.gz
+*.pdf
+*.synctex
+*.code-workspace
+.gitignore
+*.bib

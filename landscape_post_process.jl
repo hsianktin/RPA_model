@@ -1,6 +1,9 @@
 using DataFrames, CSV
+# parse L from argument input 
+L = parse(Int, ARGS[1])
 
-df = CSV.read("data_simu/rsa_plot__landscape.csv.gz", DataFrame)
+
+df = CSV.read("data_simu/rsa_plot__landscape_L_$(L).csv.gz", DataFrame)
 cols = [
     "k_on",
     "k_off",
@@ -19,4 +22,4 @@ selected_cols = [cols; ts]
 
 df = df[:, selected_cols]
 
-CSV.write("data_simu/rsa_plot_landscape_selected.csv.gz", df; compress=true)
+CSV.write("data_simu/rsa_plot_landscape_selected_L_$(L).csv.gz", df; compress=true)
