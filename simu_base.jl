@@ -1,4 +1,4 @@
-push!(LOAD_PATH,pwd())
+
 using TonksGaswithReactionGaps
 simupath = "$(pwd())/data_simu"
 function modulate_data(EX,ET;dt = 1) # record the state of data every second.

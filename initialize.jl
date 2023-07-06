@@ -1,6 +1,6 @@
 # initialize necessary environment
 println("initializing modules...")
-push!(LOAD_PATH,pwd())
+
 using Pkg
 Pkg.add("https://github.com/hsianktin/RPA_model.git")
 using TonksGaswithReactionGaps
